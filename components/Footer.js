@@ -6,7 +6,7 @@ export default function Footer() {
           <div>
             <h2 className="text-xl font-bold text-white mb-2">langelop.no</h2>
             <p className="text-sm text-gray-400">
-              Stedet for deg som elsker å løpe langt i norsk natur. Vi samler informasjon om alle ultraløp i Norge – på ett sted.
+              For deg som elsker å løpe langt i norsk natur. Vi samler informasjonen du trenger om alle ultraløp i Norge – på ett og samme sted.
             </p>
             <p className="text-sm text-gray-400 mt-3">
             Har du spørsmål eller forslag? Kontakt oss på{' '}

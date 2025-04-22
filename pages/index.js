@@ -266,25 +266,42 @@ export default function Home({ races }) {
       href={race.url || "#"}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex flex-col justify-between h-full bg-white rounded-2xl shadow-md hover:shadow-lg transition p-6 border border-gray-200 hover:border-gray-300"
+      className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
     >
-      <div>
-      <h2 className="text-base font-semibold text-gray-900 mb-1 line-clamp-1">{race.name}</h2>
-        <p className="text-sm text-gray-600 mb-1">{formatDate(race.date)}</p>
+      {/* Bilde med hover-effekt */}
+      <img
+        src={race.image_url || "/fallback.jpg"}
+        alt={race.name}
+        className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300"
+      />
 
-        <div className="flex flex-wrap gap-2 mb-2">
-          {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
-            <span
-              key={i}
-              className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded"
-            >
-              {d.trim().replace(/[\[\]"']/g, '')}
-            </span>
-          ))}
+      {/* Innhold */}
+      <div className="p-4 flex flex-col justify-between h-full">
+        {/* Tittel + tags + dato */}
+        <div className="mb-2">
+          <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">
+            {race.name}
+          </h2>
+
+          {/* Distanser som tags */}
+          <div className="flex flex-wrap gap-2 mb-1">
+            {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
+              <span
+                key={i}
+                className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
+              >
+                {d.trim().replace(/[\[\]"']/g, '')}
+              </span>
+            ))}
+          </div>
+
+          {/* Dato */}
+          <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
         </div>
-      </div>
 
-      <p className="text-sm text-gray-500 mt-auto">📍 {race.location}</p>
+        {/* Sted */}
+        <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
+      </div>
     </a>
   ))}
 </div>
