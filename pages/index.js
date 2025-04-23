@@ -6,6 +6,7 @@ import { nb } from 'date-fns/locale';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Footer from '../components/Footer';
+import { useRouter } from 'next/router';
 
 export async function getServerSideProps() {
   const { data: races, error } = await supabase.from('races').select('*');
@@ -13,6 +14,7 @@ export async function getServerSideProps() {
 }
 
 export default function Home({ races }) {
+  const router = useRouter();
   const [distanceRange, setDistanceRange] = useState([0, 200]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -250,84 +252,120 @@ export default function Home({ races }) {
           </div>
 
           {/* Høyrekolonne – Kortvisning */}
-          <div className="md:w-3/4">
-            <p className="text-gray-600 mb-4 text-sm">
-              Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
-            </p>
+<div className="md:w-3/4">
+  <p className="text-gray-600 mb-4 text-sm">
+    Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
+  </p>
 
-            {currentRaces.length === 0 ? (
-              <p className="text-gray-600">Ingen løp funnet.</p>
-            ) : (
-              <>
-                <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-  {currentRaces.map((race) => (
-    <a
-      key={race.id}
-      href={race.url || "#"}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
-    >
-      {/* Bilde med hover-effekt */}
-      <img
-        src={race.image_url || "/fallback.jpg"}
-        alt={race.name}
-        className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300"
-      />
+  {currentRaces.length === 0 ? (
+    <p className="text-gray-600">Ingen løp funnet.</p>
+  ) : (
+    <>
+      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        {currentRaces.map((race) => (
+          <div
+            key={race.id}
+            className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
+          >
+            {/* Klikkbar overlay til landingsside */}
+            <a
+              href={`/race/${race.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute inset-0 z-10"
+            >
+              <span className="sr-only">Gå til løpsside</span>
+            </a>
 
-      {/* Innhold */}
-      <div className="p-4 flex flex-col justify-between h-full">
-        {/* Tittel + tags + dato */}
-        <div className="mb-2">
-          <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">
-            {race.name}
-          </h2>
+            {/* Bilde */}
+            <img
+              src={race.image_url || "/fallback.jpg"}
+              alt={race.name}
+              className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300"
+            />
 
-          {/* Distanser som tags */}
-          <div className="flex flex-wrap gap-2 mb-1">
-            {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
-              <span
-                key={i}
-                className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
-              >
-                {d.trim().replace(/[\[\]"']/g, '')}
-              </span>
-            ))}
-          </div>
+            {/* Innhold */}
+            <div className="p-4 flex flex-col justify-between h-full relative z-20">
+              <div className="mb-2">
+                <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">
+                  {race.name}
+                </h2>
 
-          {/* Dato */}
-          <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
-        </div>
-
-        {/* Sted */}
-        <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
-      </div>
-    </a>
-  ))}
-</div>
-
-                {/* Paginering */}
-                <div className="flex justify-center mt-10 space-x-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
-                      }`}
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mb-1">
+                  {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
+                    <span
+                      key={i}
+                      className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
                     >
-                      {page}
-                    </button>
+                      {d.trim().replace(/[\[\]"']/g, '')}
+                    </span>
                   ))}
                 </div>
-              </>
+
+                {/* Dato */}
+                <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
+              </div>
+
+              {/* Lokasjon */}
+              <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
+            </div>
+
+            {/* Ekstern nettside-ikon */}
+            {race.url && (
+              <a
+                href={race.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="absolute bottom-2 right-2 text-gray-400 hover:text-blue-600 z-30"
+                title="Åpne offisiell nettside"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="feather feather-external-link"
+                >
+                  <path d="M18 3h3v3" />
+                  <path d="M21 3l-9 9" />
+                  <path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-10" />
+                </svg>
+              </a>
             )}
           </div>
-        </div>
+        ))}
       </div>
-      <Footer /> {/* 👈 legger footeren helt nederst på siden */}
+      
+      {/* Paginering */}
+      <div className="flex justify-center mt-10 space-x-2">
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-4 py-2 rounded ${
+              currentPage === page
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+      </div>
     </>
+  )}
+</div> {/* slutt på md:w-3/4 */}
+</div> {/* slutt på flex wrapper */}
+</div> {/* slutt på main wrapper */}
+
+<Footer /> {/* footer rett etter innhold */}
+</>
   );
 }
