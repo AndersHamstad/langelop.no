@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabaseClient';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import Footer from '../../components/Footer';
@@ -10,10 +11,23 @@ export async function getServerSideProps({ params }) {
     .eq('id', params.id)
     .single();
 
-  return { props: { race } };
+  const { data: comments } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('race_id', parseInt(params.id))
+    .order('created_at', { ascending: false });
+
+  return { props: { race, comments: comments || [] } };
 }
 
-export default function RacePage({ race }) {
+export default function RacePage({ race, comments }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [comment, setComment] = useState('');
+  const [submittedComments, setSubmittedComments] = useState(comments);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
   const formatDate = (date) => {
     try {
       return format(new Date(date), "d. MMMM yyyy", { locale: nb });
@@ -22,19 +36,56 @@ export default function RacePage({ race }) {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSuccessMessage('');
+    setErrorMessage('');
+  
+    if (!name || !email || !comment) {
+      setErrorMessage('Vennligst fyll ut alle felt.');
+      return;
+    }
+  
+    const { data, error } = await supabase.from('comments')
+      .insert([
+        {
+          race_id: race.id,
+          name,
+          email,
+          comment,
+          created_at: new Date().toISOString(),
+        }
+      ])
+      .select();
+  
+    if (error) {
+      if (error.code === '23505') {
+        setErrorMessage('Denne e-posten har allerede kommentert på dette løpet.');
+      } else {
+        console.error('Supabase insert error:', error);
+        setErrorMessage('Noe gikk galt. Prøv igjen.');
+      }
+    } else {
+      setSuccessMessage('Takk! Kommentaren er sendt inn.');
+      if (data && data.length > 0) {
+        setSubmittedComments([data[0], ...submittedComments]);
+      }
+      setName('');
+      setEmail('');
+      setComment('');
+    }
+  };
+
   return (
     <>
-      {/* Header */}
       <header className="bg-white shadow">
-  <div className="max-w-7xl mx-auto px-3 py-4 flex justify-between items-center">
-    <a href="/" className="flex items-center space-x-2">
-      <img src="/logo.png" alt="langeløp.no logo" className="h-10 w-15" />
-      <h2 className="text-xl font-bold text-black mb-1">langelop.no</h2>
-    </a>
-  </div>
-</header>
+        <div className="max-w-7xl mx-auto px-3 py-4 flex justify-between items-center">
+          <a href="/" className="flex items-center space-x-2">
+            <img src="/logo.png" alt="langeløp.no logo" className="h-10 w-15" />
+          </a>
+        </div>
+      </header>
 
-      {/* Innhold */}
       <main className="bg-gray-50 py-10 px-4 min-h-screen">
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow space-y-6">
           <h1 className="text-3xl font-bold text-gray-900">{race.name}</h1>
@@ -51,7 +102,6 @@ export default function RacePage({ race }) {
           <div className="space-y-2 text-sm text-gray-800">
             <p><strong>📍 Sted:</strong> {race.location}</p>
             <p><strong>📌 Fylke:</strong> {race.region}</p>
-
             <p className="flex flex-wrap gap-2">
               <strong>🏃 Distanser:</strong>{" "}
               {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
@@ -63,9 +113,7 @@ export default function RacePage({ race }) {
                 </span>
               ))}
             </p>
-
             <p><strong>⛰️ Høydemeter:</strong> {race.elevation_m || 'Ukjent'}</p>
-
             {race.url && (
               <p>
                 <strong>🌐 Nettside:</strong>{" "}
@@ -76,16 +124,67 @@ export default function RacePage({ race }) {
             )}
           </div>
 
-          <div className="pt-6 border-t">
-            <h2 className="text-lg font-semibold mb-1">Del din erfaring (kommer snart)</h2>
-            <p className="text-gray-500 text-sm">
-              Her kommer kommentarfelt, vurderinger og tips om utstyr og løpserfaringer.
-            </p>
+          {/* Kommentarseksjon */}
+          <div className="pt-6 border-t space-y-4">
+            <h2 className="text-lg font-semibold">Del din erfaring</h2>
+            <p className="italic text-xs text-gray-600">
+  Her kan du dele dine tips, erfaringer eller anbefalinger for andre løpere som vurderer å delta.
+</p>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Fornavn"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                required
+              />
+              <input
+                type="email"
+                placeholder="E-post"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                required
+              />
+              <textarea
+                placeholder="Kommentar..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                rows={4}
+                required
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              >
+                Send inn
+              </button>
+              {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
+              {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
+            </form>
+
+            <div className="mt-8">
+              <h3 className="text-md font-semibold mb-3">Erfaringer fra andre løpere</h3>
+              {submittedComments.length === 0 ? (
+                <p className="text-gray-500 text-sm">Ingen har skrevet her enda. Bli den første til å dele erfaring!</p>
+              ) : (
+                <ul className="space-y-4 text-sm">
+                  {submittedComments.map((c, i) => (
+                    <li key={i} className="bg-gray-100 p-4 rounded-lg">
+                      <p className="font-semibold text-gray-800">{c.name}</p>
+                      <p className="text-gray-700">{c.comment}</p>
+                      <p className="text-xs text-gray-500 mt-1">{new Date(c.created_at).toLocaleString('no-NO')}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
       <Footer />
     </>
   );

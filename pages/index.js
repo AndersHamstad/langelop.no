@@ -119,8 +119,8 @@ export default function Home({ races }) {
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 text-center px-4 w-full">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Ultraløp i Norge</h1>
-          <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
-          🏃Finn ditt neste eventyr
+          <p className="text-lg md:text-l text-gray-200 max-w-2xl mx-auto">
+          🏃Finn din neste utfordring
           </p>
           <input
             type="text"
