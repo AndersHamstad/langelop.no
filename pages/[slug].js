@@ -5,16 +5,25 @@ import { nb } from 'date-fns/locale';
 import Footer from '../components/Footer';
 
 export async function getServerSideProps({ params }) {
-  const { data: race } = await supabase
+  console.log('SLUG:', params.slug);
+
+  const { data: race, error } = await supabase
     .from('races')
     .select('*')
-    .eq('id', params.id)
+    .eq('slug', params.slug)
     .single();
+
+  console.log('RACE:', race);
+  console.log('ERROR:', error);
+
+  if (!race) {
+    return { notFound: true }; // Unngå 500-error
+  }
 
   const { data: comments } = await supabase
     .from('comments')
     .select('*')
-    .eq('race_id', parseInt(params.id))
+    .eq('race_id', race.id)
     .order('created_at', { ascending: false });
 
   return { props: { race, comments: comments || [] } };
