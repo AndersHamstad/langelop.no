@@ -30,9 +30,12 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto grid gap-8 md:grid-cols-3">
         {/* Om oss / logo */}
         <div>
-          <h2 className="text-xl font-bold text-white mb-2">langelop.no</h2>
-          <p className="text-sm text-gray-400">
-            For deg som elsker å løpe langt i norsk natur. Vi samler informasjonen du trenger om alle ultraløp i Norge – på ett og samme sted.
+  <div className="flex items-center space-x-3 mb-2">
+    <img src="/logo2.png" alt="Langeløp logo" className="h-8 w-auto" />
+    <h2 className="text-xl font-bold text-white">langelop.no</h2>
+  </div>
+  <p className="text-sm text-gray-400">
+    For deg som elsker å løpe langt i norsk natur. Vi samler informasjonen du trenger om alle ultraløp i Norge – på ett og samme sted.
           </p>
           <p className="text-sm text-gray-400 mt-3">
             Har du spørsmål eller forslag? Kontakt oss på{' '}

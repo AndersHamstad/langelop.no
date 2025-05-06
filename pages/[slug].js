@@ -1,8 +1,8 @@
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import Footer from '../../components/Footer';
+import Footer from '../components/Footer';
 
 export async function getServerSideProps({ params }) {
   const { data: race } = await supabase

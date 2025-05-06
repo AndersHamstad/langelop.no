@@ -253,7 +253,7 @@ export default function Home({ races }) {
 
           {/* Høyrekolonne – Kortvisning */}
 <div className="md:w-3/4">
-  <p className="text-gray-600 mb-4 text-sm">
+  <p className="text-gray-6 00 mb-4 text-sm">
     Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
   </p>
 
@@ -264,12 +264,12 @@ export default function Home({ races }) {
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
   {currentRaces.map((race) => (
     <div
-      key={race.id}
+      key={race.slug}
       className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
     >
       {/* Klikkbar overlay til landingsside */}
       <a
-        href={`/race/${race.id}`}
+        href={`/${race.slug}`}
         target="_blank"
         rel="noopener noreferrer"
         className="absolute inset-0 z-10"
