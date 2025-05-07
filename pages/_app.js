@@ -4,6 +4,8 @@ import '../styles/Datepicker.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import Head from 'next/head';
 import Script from 'next/script'; // 👈 Importerer Next.js sin Script-komponent
+import { Analytics } from '@vercel/analytics/react';
+
 
 export default function MyApp({ Component, pageProps }) {
   return (
@@ -37,6 +39,9 @@ export default function MyApp({ Component, pageProps }) {
 
       {/* Hovedinnhold */}
       <Component {...pageProps} />
+      
+      {/* Vercel Analytics */}
+      <Analytics />
     </>
   );
 }
