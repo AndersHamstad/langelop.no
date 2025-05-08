@@ -20,7 +20,7 @@ export default function MyApp({ Component, pageProps }) {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.langelop.no" />
         <meta property="og:image" content="https://www.langelop.no/hero-2.jpg" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       {/* Google Analytics */}

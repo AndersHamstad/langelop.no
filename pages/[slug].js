@@ -1,24 +1,17 @@
 import { supabase } from '../lib/supabaseClient';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import Footer from '../components/Footer';
 
 export async function getServerSideProps({ params }) {
-  console.log('SLUG:', params.slug);
-
   const { data: race, error } = await supabase
     .from('races')
     .select('*')
     .eq('slug', params.slug)
     .single();
 
-  console.log('RACE:', race);
-  console.log('ERROR:', error);
-
-  if (!race) {
-    return { notFound: true }; // Unngå 500-error
-  }
+  if (!race) return { notFound: true };
 
   const { data: comments } = await supabase
     .from('comments')
@@ -45,17 +38,27 @@ export default function RacePage({ race, comments }) {
     }
   };
 
+  useEffect(() => {
+    if (race.strava_route_id) {
+      const script = document.createElement('script');
+      script.src = 'https://strava-embeds.com/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [race.strava_route_id]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage('');
     setErrorMessage('');
-  
+
     if (!name || !email || !comment) {
       setErrorMessage('Vennligst fyll ut alle felt.');
       return;
     }
-  
-    const { data, error } = await supabase.from('comments')
+
+    const { data, error } = await supabase
+      .from('comments')
       .insert([
         {
           race_id: race.id,
@@ -66,7 +69,7 @@ export default function RacePage({ race, comments }) {
         }
       ])
       .select();
-  
+
     if (error) {
       if (error.code === '23505') {
         setErrorMessage('Denne e-posten har allerede kommentert på dette løpet.');
@@ -102,10 +105,10 @@ export default function RacePage({ race, comments }) {
 
           {race.image_url && (
             <img
-            src={race.image_url}
-            alt={race.name}
-            className="w-full h-60 object-cover rounded-lg shadow border border-gray-400"
-          />
+              src={race.image_url}
+              alt={race.name}
+              className="w-full h-60 object-cover rounded-lg shadow border border-gray-400"
+            />
           )}
 
           <div className="space-y-2 text-sm text-gray-800">
@@ -132,80 +135,88 @@ export default function RacePage({ race, comments }) {
               </p>
             )}
           </div>
-          
-          <div className="pt-1 border-t space-y-4"></div>
+
+          {race.strava_route_id && (
+            <div>
+              <h3 className="text-md font-semibold text-gray-900 mb-2"></h3>
+              <div
+                className="strava-embed-placeholder"
+                data-embed-type="route"
+                data-embed-id={race.strava_route_id}
+                data-style="standard"
+                data-from-embed="true"
+              />
+            </div>
+          )}
+
           {race.description && (
-  <div className="pt-1">
-    <h3 className="text-md font-semibold text-gray-900 mb-1">Om løpet</h3>
-    <p className="text-sm text-gray-800 whitespace-pre-line">{race.description}</p>
-  </div>
-)}
+            <div className="pt-1">
+              <h3 className="text-md font-semibold text-gray-900 mb-1">Om løpet</h3>
+              <p className="text-sm text-gray-800 whitespace-pre-line">{race.description}</p>
+            </div>
+          )}
 
-          {/* Kommentarseksjon */}
+          <div className="pt-1 border-t space-y-4"></div>
+          <div className="mt-2">
+            <h3 className="text-md font-semibold mb-3">Erfaringer fra andre løpere</h3>
+            {submittedComments.length === 0 ? (
+              <p className="text-gray-500 text-sm">Ingen har skrevet her enda. Bli den første til å dele erfaring!</p>
+            ) : (
+              <ul className="space-y-4 text-sm">
+                {submittedComments.map((c, i) => (
+                  <li key={i} className="bg-blue-50 p-4 rounded-lg">
+                    <p className="font-semibold text-gray-800">{c.name}</p>
+                    <p className="text-gray-700">{c.comment}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {format(c.created_at, "d. MMMM yyyy", { locale: nb })}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-  {/* Viste kommentarer først */}
-  <div className="pt-1 border-t space-y-4"></div>
-  <div className="mt-2">
-    <h3 className="text-md font-semibold mb-3">Erfaringer fra andre løpere</h3>
-    {submittedComments.length === 0 ? (
-      <p className="text-gray-500 text-sm">Ingen har skrevet her enda. Bli den første til å dele erfaring!</p>
-    ) : (
-      <ul className="space-y-4 text-sm">
-        {submittedComments.map((c, i) => (
-          <li key={i} className="bg-blue-50 p-4 rounded-lg">
-            <p className="font-semibold text-gray-800">{c.name}</p>
-            <p className="text-gray-700">{c.comment}</p>
-            <p className="text-xs text-gray-500 mt-1">
-  {format(c.created_at, "d. MMMM yyyy", { locale: nb })}
-</p>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-
-  {/* Innsendingsskjema */}
-  <div className="pt-6 border-t space-y-4">
-  <h2 className="text-md font-semibold">Del din erfaring</h2>
-  <p className="italic text-xs text-gray-600">
-    Her kan du dele dine tips, erfaringer eller anbefalinger for andre løpere som vurderer å delta.
-  </p>
-  <form onSubmit={handleSubmit} className="space-y-3">
-    <input
-      type="text"
-      placeholder="Fornavn"
-      value={name}
-      onChange={(e) => setName(e.target.value)}
-      className="w-full px-4 py-2 border rounded text-sm"
-      required
-    />
-    <input
-      type="email"
-      placeholder="E-post"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-      className="w-full px-4 py-2 border rounded text-sm"
-      required
-    />
-    <textarea
-      placeholder="Kommentar..."
-      value={comment}
-      onChange={(e) => setComment(e.target.value)}
-      className="w-full px-4 py-2 border rounded text-sm"
-      rows={4}
-      required
-    />
-    <button
-      type="submit"
-      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-    >
-      Send inn
-    </button>
-    {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
-    {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
-  </form>
-</div>
-</div> {/* 👈 Dette er den avsluttende div-en du manglet */}
+          <div className="pt-6 border-t space-y-4">
+            <h2 className="text-md font-semibold">Del din erfaring</h2>
+            <p className="italic text-xs text-gray-600">
+              Her kan du dele dine tips, erfaringer eller anbefalinger for andre løpere som vurderer å delta.
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Fornavn"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                required
+              />
+              <input
+                type="email"
+                placeholder="E-post"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                required
+              />
+              <textarea
+                placeholder="Kommentar..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full px-4 py-2 border rounded text-sm"
+                rows={4}
+                required
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              >
+                Send inn
+              </button>
+              {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
+              {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
+            </form>
+          </div>
+        </div>
       </main>
 
       <Footer />
