@@ -60,12 +60,17 @@ export default function Home({ races }) {
   .filter((race) => {
     const matchesSearch = race.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDistance = Array.isArray(race.distance_numeric) &&
-      race.distance_numeric.some(num =>
-        distanceRange[1] === maxSliderValue
-          ? num >= distanceRange[0]
-          : num >= distanceRange[0] && num <= distanceRange[1]
-      );
+    const matchesDistance = (() => {
+      if (!Array.isArray(race.distance_numeric)) return false;
+      return race.distance_numeric.some((num) => {
+        if (typeof num !== 'number') return false;
+        if (distanceRange[1] === maxSliderValue) {
+          return num >= distanceRange[0];
+        }
+        return num >= distanceRange[0] && num <= distanceRange[1];
+      });
+    })();
+    
 
     const matchesDate = (() => {
       if (!startDate && !endDate) return true;

@@ -20,7 +20,10 @@ export default function MyApp({ Component, pageProps }) {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.langelop.no" />
         <meta property="og:image" content="https://www.langelop.no/hero-2.jpg" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta name="theme-color" content="#ffffff" />
       </Head>
 
       {/* Google Analytics */}
