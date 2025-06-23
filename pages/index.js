@@ -1,3 +1,6 @@
+// pages/index.js
+
+// === Import dependencies ===
 import { supabase } from '../lib/supabaseClient';
 import { useState, useEffect, useRef } from 'react';
 import { Range } from 'react-range';
@@ -8,13 +11,19 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Footer from '../components/Footer';
 import { useRouter } from 'next/router';
 
+
+// === Data fetching on server ===
 export async function getServerSideProps() {
   const { data: races, error } = await supabase.from('races').select('*');
   return { props: { races: races || [] } };
 }
 
+
+// === Main component ===
 export default function Home({ races }) {
   const router = useRouter();
+
+  // -- State declarations ------------------------------------------
   const [distanceRange, setDistanceRange] = useState([0, 200]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,22 +32,29 @@ export default function Home({ races }) {
   const [regionFilter, setRegionFilter] = useState([]);
   const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
   const [sortMethod, setSortMethod] = useState('date');
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const [onlyUpcoming, setOnlyUpcoming] = useState(true);
+
   const dropdownRef = useRef(null);
   const racesPerPage = 12;
   const maxSliderValue = 200;
-  const [onlyUpcoming, setOnlyUpcoming] = useState(true);
 
+  // -- Derive unique regions for filter ---------------------------
   const uniqueRegions = [...new Set(races.map(r => r.region).filter(Boolean))].sort();
 
+  // -- Handlers ----------------------------------------------------
+
+  // Reset all filters to defaults
   const nullstillFilter = () => {
     setSearchQuery('');
-    setDistanceRange([0, 300]);
+    setDistanceRange([0, maxSliderValue]);
     setStartDate(null);
     setEndDate(null);
     setRegionFilter([]);
     setCurrentPage(1);
   };
 
+  // Toggle region selection
   const handleRegionChange = (region) => {
     if (regionFilter.includes(region)) {
       setRegionFilter(regionFilter.filter(r => r !== region));
@@ -48,6 +64,7 @@ export default function Home({ races }) {
     setCurrentPage(1);
   };
 
+  // Format date for display
   const formatDate = (dateString) => {
     try {
       return format(new Date(dateString), "d. MMMM yyyy", { locale: nb });
@@ -56,57 +73,56 @@ export default function Home({ races }) {
     }
   };
 
+  // -- Filtering and sorting logic ---------------------------------
   const filteredRaces = races
-  .filter((race) => {
-    const matchesSearch = race.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    .filter((race) => {
+      const matchesSearch = race.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDistance = (() => {
-      if (!Array.isArray(race.distance_numeric)) return false;
-      return race.distance_numeric.some((num) => {
-        if (typeof num !== 'number') return false;
-        if (distanceRange[1] === maxSliderValue) {
-          return num >= distanceRange[0];
+      const matchesDistance = (() => {
+        if (!Array.isArray(race.distance_numeric)) return false;
+        return race.distance_numeric.some(num =>
+          distanceRange[1] === maxSliderValue
+            ? num >= distanceRange[0]
+            : num >= distanceRange[0] && num <= distanceRange[1]
+        );
+      })();
+
+      const matchesDate = (() => {
+        if (!startDate && !endDate) return true;
+        try {
+          const date = parseISO(race.date);
+          if (startDate && isBefore(date, startDate)) return false;
+          if (endDate && isAfter(date, endDate)) return false;
+          return true;
+        } catch {
+          return false;
         }
-        return num >= distanceRange[0] && num <= distanceRange[1];
-      });
-    })();
-    
+      })();
 
-    const matchesDate = (() => {
-      if (!startDate && !endDate) return true;
+      const matchesRegion = regionFilter.length === 0 || regionFilter.includes(race.region);
+
+      const matchesUpcoming = !onlyUpcoming || (race.date && new Date(race.date) >= new Date());
+
+      return matchesSearch && matchesDistance && matchesDate && matchesRegion && matchesUpcoming;
+    })
+    .sort((a, b) => {
       try {
-        const date = parseISO(race.date);
-        if (startDate && isBefore(date, startDate)) return false;
-        if (endDate && isAfter(date, endDate)) return false;
-        return true;
+        if (sortMethod === "distanceAsc") {
+          return (a.distance_numeric?.[0] || 0) - (b.distance_numeric?.[0] || 0);
+        }
+        if (sortMethod === "distanceDesc") {
+          return (b.distance_numeric?.[0] || 0) - (a.distance_numeric?.[0] || 0);
+        }
+        return new Date(a.date) - new Date(b.date);
       } catch {
-        return false;
+        return 0;
       }
-    })();
-
-    const matchesRegion = regionFilter.length === 0 || regionFilter.includes(race.region);
-
-    const matchesUpcoming = !onlyUpcoming || (race.date && new Date(race.date) >= new Date());
-
-    return matchesSearch && matchesDistance && matchesDate && matchesRegion && matchesUpcoming;
-  })
-  .sort((a, b) => {
-    try {
-      if (sortMethod === "distanceAsc") {
-        return (a.distance_numeric?.[0] || 0) - (b.distance_numeric?.[0] || 0);
-      }
-      if (sortMethod === "distanceDesc") {
-        return (b.distance_numeric?.[0] || 0) - (a.distance_numeric?.[0] || 0);
-      }
-      return new Date(a.date) - new Date(b.date);
-    } catch {
-      return 0;
-    }
-  });
+    });
 
   const totalPages = Math.ceil(filteredRaces.length / racesPerPage);
   const currentRaces = filteredRaces.slice((currentPage - 1) * racesPerPage, currentPage * racesPerPage);
 
+  // Close region dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -117,70 +133,60 @@ export default function Home({ races }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+
   return (
     <>
-      {/* Hero */}
-      <section className="relative bg-[url('/hero-2.jpg')] bg-cover bg-[position:center_60%] h-[55vh] flex items-center justify-center text-white">
+      {/* === Hero section with search === */}<section className="relative bg-[url('/hero-2.jpg')] bg-cover bg-[position:center_60%] h-[40vh] md:h-[55vh] flex items-center justify-center text-white">
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 text-center px-4 w-full">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Ultraløp i Norge</h1>
-          <p className="text-lg md:text-l text-gray-200 max-w-2xl mx-auto">
-          🏃Finn din neste utfordring
-          </p>
+          <p className="text-lg md:text-l text-gray-200 max-w-2xl mx-auto">🏃 Finn din neste utfordring</p>
           <input
             type="text"
             placeholder="Søk etter løp..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="mt-6 w-full max-w-md mx-auto px-4 py-2 rounded-lg text-black text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <button
+            className="block md:hidden mt-4 text-sm text-blue-200 underline"
+            onClick={() => setShowMobileFilter(!showMobileFilter)}
+          >
+            {showMobileFilter ? 'Skjul filter' : 'Vis filter'}
+          </button>
         </div>
       </section>
 
-      {/* Innhold */}
+      {/* === Main content: filters + list === */}
       <div className="bg-gray-100 pt-5 px-4 pb-12 min-h-screen">
         <div className="max-w-7xl mx-auto md:flex gap-8">
 
-          {/* Filterkolonne */}
-          <div className="md:w-1/5 mb-8 md:mb-0">
+          {/* -- Filter column (mobile toggles, desktop always visible) -- */}
+          <div className={`md:w-1/5 mb-8 md:mb-0 ${showMobileFilter ? 'block' : 'hidden'} md:block`}>
             <div className="bg-white p-6 rounded-xl shadow space-y-6 sticky top-[15px]">
-              {/* Sortering */}
+              {/* Sorting */}
               <div>
-                <label className="block text-sm text-gray-600 mb-2"></label>
                 <select
-  value={sortMethod}
-  onChange={(e) => setSortMethod(e.target.value)}
-  className="w-full max-w-[188px] px-3 py-2 rounded border border-gray-300 text-sm text-gray-700"
->
+                  value={sortMethod}
+                  onChange={(e) => { setSortMethod(e.target.value); setCurrentPage(1); }}
+                  className="w-full max-w-[188px] px-3 py-2 rounded border border-gray-300 text-sm text-gray-700"
+                >
                   <option value="date">Sorter etter dato</option>
                   <option value="distanceAsc">Distanse (lav–høy)</option>
                   <option value="distanceDesc">Distanse (høy–lav)</option>
                 </select>
               </div>
 
-              {/* Distanse-filter */}
+              {/* Distance filter */}
               <div>
                 <label className="block text-sm text-gray-600 mb-2">
-                Distanse: <span className="font-medium">
-                {distanceRange[0]}–{distanceRange[1] === maxSliderValue ? '200+' : distanceRange[1]} km
-                </span>
+                  Distanse: <span className="font-medium">{distanceRange[0]}–{distanceRange[1] === maxSliderValue ? '200+' : distanceRange[1]} km</span>
                 </label>
                 <Range
-                  step={1}
-                  min={0}
-                  max={maxSliderValue}
-                  values={distanceRange}
-                  onChange={(range) => {
-                    setDistanceRange(range);
-                    setCurrentPage(1);
-                  }}
+                  step={1} min={0} max={maxSliderValue} values={distanceRange}
+                  onChange={(range) => { setDistanceRange(range); setCurrentPage(1); }}
                   renderTrack={({ props, children }) => (
-                    <div {...props} className="h-2 bg-gray-200 rounded-full">
-                      {children}
-                    </div>
+                    <div {...props} className="h-2 bg-gray-200 rounded-full">{children}</div>
                   )}
                   renderThumb={({ props }) => (
                     <div {...props} className="w-5 h-5 bg-blue-500 rounded-full shadow border border-white" />
@@ -188,45 +194,24 @@ export default function Home({ races }) {
                 />
               </div>
 
-              {/* Dato-filter */}
+              {/* Date range filter */}
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Tidsperiode:</label>
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date) => { setStartDate(date); setCurrentPage(1); }}
-                  dateFormat="dd.MM.yyyy"
-                  placeholderText="Velg startdato"
-                  className="w-full px-3 py-2 mb-2 rounded border border-gray-300 text-sm text-gray-700"
-                />
-                <label className="block text-sm text-gray-600 mb-1"></label>
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date) => { setEndDate(date); setCurrentPage(1); }}
-                  dateFormat="dd.MM.yyyy"
-                  placeholderText="Velg sluttdato"
-                  className="w-full px-3 py-2 rounded border border-gray-300 text-sm text-gray-700"
-                />
+                <DatePicker selected={startDate} onChange={(date) => { setStartDate(date); setCurrentPage(1); }} dateFormat="dd.MM.yyyy" placeholderText="Velg startdato" className="w-full px-3 py-2 mb-2 rounded border border-gray-300 text-sm text-gray-700" />
+                <DatePicker selected={endDate} onChange={(date) => { setEndDate(date); setCurrentPage(1); }} dateFormat="dd.MM.yyyy" placeholderText="Velg sluttdato" className="w-full px-3 py-2 rounded border border-gray-300 text-sm text-gray-700" />
               </div>
 
-              {/* Region-filter */}
+              {/* Region filter */}
               <div className="relative" ref={dropdownRef}>
                 <label className="block text-sm text-gray-600 mb-1">Område</label>
-                <div
-                  onClick={() => setRegionDropdownOpen(!regionDropdownOpen)}
-                  className="w-full max-w-[188px] h-[38px] px-3 py-2 border rounded border-gray-300 text-sm text-gray-700 bg-white flex items-center cursor-pointer"
-                >
-                  {regionFilter.length === 0 ? "Velg fylke" : regionFilter.join(", ")}
+                <div onClick={() => setRegionDropdownOpen(!regionDropdownOpen)} className="w-full max-w-[188px] h-[38px] px-3 py-2 border rounded border-gray-300 text-sm text-gray-700 bg-white flex items-center cursor-pointer">
+                  {regionFilter.length === 0 ? 'Velg fylke' : regionFilter.join(', ')}
                 </div>
                 {regionDropdownOpen && (
                   <div className="absolute z-10 mt-2 w-full max-h-48 overflow-y-auto bg-white border border-gray-300 rounded shadow-md p-2 space-y-1">
-                    {uniqueRegions.map((region) => (
+                    {uniqueRegions.map(region => (
                       <label key={region} className="flex items-center space-x-2 text-sm text-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={regionFilter.includes(region)}
-                          onChange={() => handleRegionChange(region)}
-                          className="rounded text-blue-600"
-                        />
+                        <input type="checkbox" checked={regionFilter.includes(region)} onChange={() => handleRegionChange(region)} className="rounded text-blue-600" />
                         <span>{region}</span>
                       </label>
                     ))}
@@ -234,144 +219,70 @@ export default function Home({ races }) {
                 )}
               </div>
 
+              {/* Only upcoming toggle */}
               <div className="flex items-center space-x-2">
-  <input
-    type="checkbox"
-    checked={onlyUpcoming}
-    onChange={() => { setOnlyUpcoming(!onlyUpcoming); setCurrentPage(1); }}
-    className="rounded text-blue-600"
-  />
-  <label className="text-sm text-gray-700">Vis kun kommende løp</label>
-</div>
-
-              {/* Nullstill-filter */}
-              <div>
-                <button
-                  onClick={nullstillFilter}
-                  className="text-sm text-blue-600 underline hover:text-blue-800"
-                >
-                  Nullstill filter
-                </button>
+                <input type="checkbox" checked={onlyUpcoming} onChange={() => { setOnlyUpcoming(!onlyUpcoming); setCurrentPage(1); }} className="rounded text-blue-600" />
+                <label className="text-sm text-gray-700">Vis kun kommende løp</label>
               </div>
+
+              {/* Reset filters */}
+              <button onClick={nullstillFilter} className="text-sm text-blue-600 underline hover:text-blue-800">Nullstill filter</button>
             </div>
           </div>
 
-          {/* Høyrekolonne – Kortvisning */}
-<div className="md:w-3/4">
-  <p className="text-gray-6 00 mb-4 text-sm">
-    Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
-  </p>
+          {/* -- Races list and pagination ----------------------------- */}
+          <div className="md:w-3/4">
 
-  {currentRaces.length === 0 ? (
-    <p className="text-gray-600">Ingen løp funnet.</p>
-  ) : (
-    <>
-      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-  {currentRaces.map((race) => (
-    <div
-      key={race.slug}
-      className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
-    >
-      {/* Klikkbar overlay til landingsside */}
-      <a
-        href={`/${race.slug}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute inset-0 z-10"
-        style={{ pointerEvents: 'auto' }}
-      >
-        <span className="sr-only">Gå til løpsside</span>
-      </a>
+            <p className="text-gray-600 mb-4 text-sm">
+              Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
+            </p>
 
-      {/* Bilde */}
-      <img
-        src={race.image_url || "/fallback.jpg"}
-        alt={race.name}
-        className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300"
-      />
+            {currentRaces.length === 0 ? (
+              <p className="text-gray-600">Ingen løp funnet.</p>
+            ) : (
+              <>
+                {/* Grid of race cards */}
+                <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+                  {currentRaces.map(race => (
+                    <div key={race.slug} className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden">
+                      <a href={`/${race.slug}`} className="absolute inset-0 z-10 pointer-events-auto"><span className="sr-only">Gå til løpsside</span></a>
+                      <img src={race.image_url || '/fallback.jpg'} alt={race.name} className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="p-4 flex flex-col justify-between h-full relative z-20 pointer-events-none">
+                        <div className="mb-2">
+                          <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">{race.name}</h2>
+                          <div className="flex flex-wrap gap-2 mb-1">
+                            {(Array.isArray(race.distance) ? race.distance : race.distance?.split(',') || []).map((d,i) => (
+                              <span key={i} className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full">{d.trim().replace(/[\[\]"']/g,'')}</span>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
+                      </div>
+                      {/* External site icon if present */}
+                      {race.url && (
+                        <a href={race.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="absolute bottom-2 right-2 text-gray-400 hover:text-blue-600 z-30 pointer-events-auto" title="Åpne offisiell nettside">{/* icon SVG */}</a>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
-      {/* Innhold */}
-      <div className="p-4 flex flex-col justify-between h-full relative z-20 pointer-events-none">
-        <div className="mb-2">
-          <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">
-            {race.name}
-          </h2>
+                {/* Pagination controls */}
+                <div className="flex justify-center mt-10 space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i+1).map(page => (
+                    <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded ${currentPage===page ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}>{page}</button>
+                  ))}
+                </div>
+              </>
+            )}
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-1">
-            {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
-              <span
-                key={i}
-                className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
-              >
-                {d.trim().replace(/[\[\]"']/g, '')}
-              </span>
-            ))}
           </div>
 
-          {/* Dato */}
-          <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
         </div>
-
-        {/* Lokasjon */}
-        <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
       </div>
 
-      {/* Ekstern nettside-ikon */}
-      {race.url && (
-        <a
-          href={race.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-2 right-2 text-gray-400 hover:text-blue-600 z-30 pointer-events-auto"
-          title="Åpne offisiell nettside"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="feather feather-external-link"
-          >
-            <path d="M18 3h3v3" />
-            <path d="M21 3l-9 9" />
-            <path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-10" />
-          </svg>
-        </a>
-      )}
-    </div>
-  ))}
-</div>
-      
-      {/* Paginering */}
-      <div className="flex justify-center mt-10 space-x-2">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <button
-            key={page}
-            onClick={() => setCurrentPage(page)}
-            className={`px-4 py-2 rounded ${
-              currentPage === page
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-      </div>
+      {/* === Footer === */}
+      <Footer />
     </>
-  )}
-</div> {/* slutt på md:w-3/4 */}
-</div> {/* slutt på flex wrapper */}
-</div> {/* slutt på main wrapper */}
-
-<Footer /> {/* footer rett etter innhold */}
-</>
   );
 }
