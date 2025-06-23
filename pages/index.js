@@ -161,6 +161,16 @@ export default function Home({ races }) {
       <div className="bg-gray-100 pt-5 px-4 pb-12 min-h-screen">
         <div className="max-w-7xl mx-auto md:flex gap-8">
 
+          {/* === “Vis filter”‐knappen ==== */}
+<div className="md:hidden bg-gray-100 px-4 pt-4">
+  <button
+    onClick={() => setShowMobileFilter(!showMobileFilter)}
+    className="w-full px-4 py-2 text-white bg-blue-600 rounded shadow"
+  >
+    {showMobileFilter ? 'Skjul filter' : 'Vis filter'}
+  </button>
+</div>
+
           {/* -- Filter column (mobile toggles, desktop always visible) -- */}
           <div className={`md:w-1/5 mb-8 md:mb-0 ${showMobileFilter ? 'block' : 'hidden'} md:block`}>
             <div className="bg-white p-6 rounded-xl shadow space-y-6 sticky top-[15px]">
