@@ -1,3 +1,4 @@
+// pages/[slug].js
 import { supabase } from '../lib/supabaseClient';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -23,6 +24,7 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function RacePage({ race, comments }) {
+  // Kommentar / innsendings‐state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [comment, setComment] = useState('');
@@ -30,6 +32,11 @@ export default function RacePage({ race, comments }) {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Read more‐state for beskrivelsen
+  const [showFullDesc, setShowFullDesc] = useState(false);
+  const MAX_DESC_CHARS = 200;
+
+  // Formaterings‐hjelper
   const formatDate = (date) => {
     try {
       return format(new Date(date), "d. MMMM yyyy", { locale: nb });
@@ -38,6 +45,7 @@ export default function RacePage({ race, comments }) {
     }
   };
 
+  // Last Strava‐script om nødvendig
   useEffect(() => {
     if (race.strava_route_id) {
       const script = document.createElement('script');
@@ -47,6 +55,7 @@ export default function RacePage({ race, comments }) {
     }
   }, [race.strava_route_id]);
 
+  // Innsending av kommentar
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage('');
@@ -59,15 +68,7 @@ export default function RacePage({ race, comments }) {
 
     const { data, error } = await supabase
       .from('comments')
-      .insert([
-        {
-          race_id: race.id,
-          name,
-          email,
-          comment,
-          created_at: new Date().toISOString(),
-        }
-      ])
+      .insert([{ race_id: race.id, name, email, comment, created_at: new Date().toISOString() }])
       .select();
 
     if (error) {
@@ -112,33 +113,32 @@ export default function RacePage({ race, comments }) {
           )}
 
           <div className="space-y-2 text-sm text-gray-800">
+            {/* Løpsdetaljer */}
             <p><strong>📍 Sted:</strong> {race.location}</p>
             <p><strong>📌 Fylke:</strong> {race.region}</p>
             <p className="flex flex-wrap gap-2">
-              <strong>🏃 Distanser:</strong>{" "}
-              {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d, i) => (
-                <span
-                  key={i}
-                  className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded"
-                >
-                  {d.trim().replace(/[\[\]"']/g, '')}
+              <strong>🏃 Distanser:</strong>{' '}
+              {(Array.isArray(race.distance) ? race.distance : race.distance?.split(",") || []).map((d,i)=>(
+                <span key={i} className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">
+                  {d.trim().replace(/[[\]"']/g, '')}
                 </span>
               ))}
             </p>
             <p><strong>⛰️ Høydemeter:</strong> {race.elevation_m || 'Ukjent'}</p>
             {race.url && (
               <p>
-                <strong>🌐 Nettside:</strong>{" "}
-                <a href={race.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <strong>🌐 Nettside:</strong>{' '}
+                <a href={race.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                   {race.url}
                 </a>
               </p>
             )}
           </div>
 
+          {/* Strava-embed hvis tilgjengelig */}
           {race.strava_route_id && (
             <div>
-              <h3 className="text-md font-semibold text-gray-900 mb-2"></h3>
+              <h3 className="text-md font-semibold text-gray-900 mb-2">Løypekart (Strava)</h3>
               <div
                 className="strava-embed-placeholder"
                 data-embed-type="route"
@@ -149,13 +149,30 @@ export default function RacePage({ race, comments }) {
             </div>
           )}
 
+          {/* Om løpet med Read More-/Read Less */}
           {race.description && (
             <div className="pt-1">
               <h3 className="text-md font-semibold text-gray-900 mb-1">Om løpet</h3>
-              <p className="text-sm text-gray-800 whitespace-pre-line">{race.description}</p>
+              <p className="text-sm text-gray-800 whitespace-pre-line">
+                {showFullDesc
+                  ? race.description
+                  : race.description.length > MAX_DESC_CHARS
+                    ? `${race.description.slice(0, MAX_DESC_CHARS)}…`
+                    : race.description
+                }
+              </p>
+              {race.description.length > MAX_DESC_CHARS && (
+                <button
+                  onClick={() => setShowFullDesc(prev=>!prev)}
+                  className="mt-2 text-blue-600 underline text-sm"
+                >
+                  {showFullDesc ? 'Vis mindre' : 'Vis mer'}
+                </button>
+              )}
             </div>
           )}
 
+          {/* Kommentarseksjon */}
           <div className="pt-1 border-t space-y-4"></div>
           <div className="mt-2">
             <h3 className="text-md font-semibold mb-3">Erfaringer fra andre løpere</h3>
@@ -163,7 +180,7 @@ export default function RacePage({ race, comments }) {
               <p className="text-gray-500 text-sm">Ingen har skrevet her enda. Bli den første til å dele erfaring!</p>
             ) : (
               <ul className="space-y-4 text-sm">
-                {submittedComments.map((c, i) => (
+                {submittedComments.map((c,i)=>(
                   <li key={i} className="bg-blue-50 p-4 rounded-lg">
                     <p className="font-semibold text-gray-800">{c.name}</p>
                     <p className="text-gray-700">{c.comment}</p>
@@ -176,42 +193,15 @@ export default function RacePage({ race, comments }) {
             )}
           </div>
 
+          {/* Innsendingsskjema */}
           <div className="pt-6 border-t space-y-4">
             <h2 className="text-md font-semibold">Del din erfaring</h2>
-            <p className="italic text-xs text-gray-600">
-              Her kan du dele dine tips, erfaringer eller anbefalinger for andre løpere som vurderer å delta.
-            </p>
+            <p className="italic text-xs text-gray-600">Her kan du dele dine tips, erfaringer eller anbefalinger for andre løpere som vurderer å delta.</p>
             <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Fornavn"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border rounded text-sm"
-                required
-              />
-              <input
-                type="email"
-                placeholder="E-post"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border rounded text-sm"
-                required
-              />
-              <textarea
-                placeholder="Kommentar..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full px-4 py-2 border rounded text-sm"
-                rows={4}
-                required
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-              >
-                Send inn
-              </button>
+              <input type="text" placeholder="Fornavn" value={name} onChange={e=>setName(e.target.value)} className="w-full px-4 py-2 border rounded text-sm" required />
+              <input type="email" placeholder="E-post" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-2 border rounded text-sm" required />
+              <textarea placeholder="Kommentar..." value={comment} onChange={e=>setComment(e.target.value)} className="w-full px-4 py-2 border rounded text-sm" rows={4} required />
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Send inn</button>
               {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
               {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
             </form>
