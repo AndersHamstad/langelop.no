@@ -164,6 +164,13 @@ export default function Home({ races }) {
           {/* -- Filter column (mobile toggles, desktop always visible) -- */}
           <div className={`md:w-1/5 mb-8 md:mb-0 ${showMobileFilter ? 'block' : 'hidden'} md:block`}>
             <div className="bg-white p-6 rounded-xl shadow space-y-6 sticky top-[15px]">
+
+              {/* Only upcoming toggle */}
+              <div className="flex items-center space-x-2">
+                <input type="checkbox" checked={onlyUpcoming} onChange={() => { setOnlyUpcoming(!onlyUpcoming); setCurrentPage(1); }} className="rounded text-blue-600" />
+                <label className="text-sm text-gray-700">Vis kun kommende løp</label>
+              </div>
+              
               {/* Sorting */}
               <div>
                 <select
@@ -219,12 +226,6 @@ export default function Home({ races }) {
                 )}
               </div>
 
-              {/* Only upcoming toggle */}
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" checked={onlyUpcoming} onChange={() => { setOnlyUpcoming(!onlyUpcoming); setCurrentPage(1); }} className="rounded text-blue-600" />
-                <label className="text-sm text-gray-700">Vis kun kommende løp</label>
-              </div>
-
               {/* Reset filters */}
               <button onClick={nullstillFilter} className="text-sm text-blue-600 underline hover:text-blue-800">Nullstill filter</button>
             </div>
@@ -234,8 +235,9 @@ export default function Home({ races }) {
           <div className="md:w-3/4">
 
             <p className="text-gray-600 mb-4 text-sm">
-              Viser <span className="font-medium">{filteredRaces.length}</span> løp basert på dine kriterier.
-            </p>
+  Viser <span className="font-medium">{filteredRaces.length}</span> av <span className="font-medium">{races.length}</span> løp basert på dine kriterier.
+</p>
+
 
             {currentRaces.length === 0 ? (
               <p className="text-gray-600">Ingen løp funnet.</p>
