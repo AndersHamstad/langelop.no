@@ -170,21 +170,23 @@ const filteredRaces = races
       />
 
       {/* Infotekst: 2026 + nyhetsbrev (uten bakgrunn) */}
-  <div className="mt-10 max-w-md mx-auto">
-    <p className="text-xs md:text-sm text:white/90 leading-snug">
-      <span
-        aria-hidden
-        className="inline-block align-middle h-1.5 w-1.5 rounded-full bg-blue-400 mr-2"
-      />
-      Løp for <span className="font-semibold">2026</span> publiseres fortløpende.{' '}
-      <a
-    href="#newsletter-anchor"
-    className="underline underline-offset-2 decoration-white/60 hover:decoration-white font-medium"
-  >
-    Meld deg på nyhetsbrevet
-  </a>
-    </p>
-  </div>
+<div className="mt-10 max-w-md mx-auto">
+  <p className="text-xs md:text-sm text-white/90 leading-snug">
+    <span
+      aria-hidden
+      className="inline-block align-middle h-1.5 w-1.5 rounded-full bg-blue-400 mr-2"
+    />
+    Løp for <span className="font-semibold">2026</span> publiseres fortløpende.{' '}
+    <button
+      onClick={() => {
+        document.getElementById('newsletter-anchor')?.scrollIntoView({ behavior: 'smooth' });
+      }}
+      className="underline underline-offset-2 decoration-white/60 hover:decoration-white font-medium"
+    >
+      Meld deg på nyhetsbrevet
+    </button>
+  </p>
+</div>
 
       <button
         className="block md:hidden mt-4 text-sm text-blue-200 underline"
