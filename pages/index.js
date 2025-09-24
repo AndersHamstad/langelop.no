@@ -39,6 +39,19 @@
     const racesPerPage = 12;
     const maxSliderValue = 200;
 
+    // Hjelpefunksjon for å forkorte lange status-tekster i ribbons
+const ribbonText = (note) => {
+  if (!note) return '';
+  const value = note.toLowerCase();
+
+  if (value === 'få plasser igjen') return 'Få plasser';
+  if (value === 'utsolgt') return 'Utsolgt';
+  if (value === 'snart') return 'Snart';
+
+  // fallback: vis original tekst
+  return note;
+};
+
     // -- Derive unique regions for filter ---------------------------
     const uniqueRegions = [...new Set(races.map(r => r.region).filter(Boolean))].sort();
 
@@ -283,31 +296,101 @@ const filteredRaces = races
                 <p className="text-gray-600">Ingen løp funnet.</p>
               ) : (
                 <>
-                  {/* Grid of race cards */}
-                  <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-                    {currentRaces.map(race => (
-                      <div key={race.slug} className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden">
-                        <a href={`/${race.slug}`} className="absolute inset-0 z-10 pointer-events-auto"><span className="sr-only">Gå til løpsside</span></a>
-                        <img src={race.image_url || '/fallback.jpg'} alt={race.name} className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="p-4 flex flex-col justify-between h-full relative z-20 pointer-events-none">
-                          <div className="mb-2">
-                            <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">{race.name}</h2>
-                            <div className="flex flex-wrap gap-2 mb-1">
-                              {(Array.isArray(race.distance) ? race.distance : race.distance?.split(',') || []).map((d,i) => (
-                                <span key={i} className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full">{d.trim().replace(/[\[\]"']/g,'')}</span>
-                              ))}
-                            </div>
-                            <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
-                        </div>
-                        {/* External site icon if present */}
-                        {race.url && (
-                          <a href={race.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="absolute bottom-2 right-2 text-gray-400 hover:text-blue-600 z-30 pointer-events-auto" title="Åpne offisiell nettside">{/* icon SVG */}</a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                 {/* Grid of race cards */}
+<div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+  {currentRaces.map((race) => (
+    <div
+      key={race.slug}
+      className="relative group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-lg transition border border-gray-200 hover:border-gray-300 overflow-hidden"
+    >
+      {/* Ribbon status note */}
+{race.status_note && (
+  <div className="absolute top-0 right-0 z-30 overflow-hidden w-20 h-20 pointer-events-none">
+    <div
+      className={`absolute top-2 right-[-32px] rotate-45 text-[10px] font-semibold py-0.5 w-28 text-center shadow
+        ${race.status_note.toLowerCase() === 'utsolgt' ? 'bg-rose-200 text-rose-800' : ''}
+        ${race.status_note.toLowerCase() === 'få plasser igjen' ? 'bg-amber-200 text-amber-800' : ''}
+        ${race.status_note.toLowerCase() === 'snart' ? 'bg-sky-200 text-sky-800' : ''}
+        ${!['utsolgt','få plasser igjen','snart'].includes(race.status_note.toLowerCase()) ? 'bg-gray-200 text-gray-700' : ''}
+      `}
+    >
+      {ribbonText(race.status_note)}
+    </div>
+  </div>
+)}
+      <a
+        href={`/${race.slug}`}
+        className="absolute inset-0 z-10 pointer-events-auto"
+      >
+        <span className="sr-only">Gå til løpsside</span>
+      </a>
+
+      <img
+        src={race.image_url || '/fallback.jpg'}
+        alt={race.name}
+        className="w-full h-24 object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-300"
+      />
+
+      <div className="p-4 flex flex-col justify-between h-full relative z-20 pointer-events-none">
+        <div className="mb-2">
+          <h2 className="text-base font-semibold text-gray-900 line-clamp-1 mb-1">
+            {race.name}
+          </h2>
+          <div className="flex flex-wrap gap-2 mb-1">
+            {(Array.isArray(race.distance)
+              ? race.distance
+              : race.distance?.split(',') || []
+            ).map((d, i) => (
+              <span
+                key={i}
+                className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
+              >
+                {d.trim().replace(/[\[\]"']/g, '')}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500">{formatDate(race.date)}</p>
+        </div>
+        <p className="text-xs text-gray-500 mt-auto">📍{race.location}</p>
+      </div>
+
+      {/* External site icon if present */}
+      {race.url && (
+        <a
+          href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-2 right-2 bg-white/80 rounded-full p-1.5 shadow hover:bg-blue-50 text-gray-500 hover:text-blue-600 z-30 pointer-events-auto"
+          title="Åpne offisiell nettside"
+          aria-label="Åpne offisiell nettside"
+        >
+          {/* Link icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14 3h7m0 0v7m0-7L10 14"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 10v6a3 3 0 003 3h6"
+            />
+          </svg>
+        </a>
+      )}
+    </div>
+  ))}
+</div>
+
 
                   {/* Pagination controls */}
                   <div className="flex justify-center mt-10 space-x-2">
