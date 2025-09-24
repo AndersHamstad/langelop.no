@@ -209,6 +209,19 @@ export default function RacePage({ race, comments }) {
         </div>
       </main>
 
+      {/* Arrangør-info */}
+<div className="mt-10 text-center text-sm text-gray-600">
+  <strong>👋 Arrangerer du dette løpet?</strong>{" "}
+  Ta kontakt på{" "}
+  <a
+    href="mailto:post@langelop.no"
+    className="text-blue-600 underline hover:text-blue-800"
+  >
+    post@langelop.no
+  </a>{" "}
+  hvis du vil legge til eller endre detaljer.
+</div>
+
       <Footer />
     </>
   );
