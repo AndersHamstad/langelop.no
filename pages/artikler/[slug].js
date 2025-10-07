@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
 export default function Artikkel({ source, frontMatter }) {
-  const { title, author, date, image, ingress } = frontMatter;
+  const { title, author, date, image, ingress, focusArticle,} = frontMatter;
   const formattedDate = format(new Date(date), 'd. MMMM yyyy', { locale: nb });
 
   return (
@@ -33,17 +33,19 @@ export default function Artikkel({ source, frontMatter }) {
       <main className="bg-gray-50 min-h-screen px-4 sm:px-6 pt-10 pb-20">
         <article className="max-w-3xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
 
-          {/* Bilde */}
-          {image && (
-            <div className="w-full overflow-hidden rounded-t-xl">
-              <img
-                src={image}
-                alt={title}
-                className="w-full h-[250px] object-cover rounded-t-xl"
-                style={{ objectPosition: 'center 90%' }}
-              />
-            </div>
-          )}
+         {/* Bilde */}
+{image && (
+  <div className="w-full overflow-hidden rounded-t-xl">
+    <img
+      src={image}
+      alt={title}
+      className="w-full h-[250px] object-cover rounded-t-xl"
+      style={{ objectPosition: focusArticle || 'center center' }}
+    />
+  </div>
+)}
+
+
 
           {/* Innhold */}
           <div className="p-8 sm:p-10 space-y-6">

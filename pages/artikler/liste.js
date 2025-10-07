@@ -34,12 +34,14 @@ href={`/artikler/${article.slug}`}
 className="group bg-white rounded-xl shadow hover:shadow-md border border-gray-200 overflow-hidden flex flex-col"
 >
 {article.image && (
-<img
-src={article.image}
-alt={article.title}
-className="w-full h-36 object-cover group-hover:opacity-90 transition"
+  <img
+  src={article.image}
+  alt={article.title}
+  className="w-full h-36 object-cover group-hover:opacity-90 transition"
+  style={{ objectPosition: article.focusList || 'center center' }}
 />
 )}
+
 <div className="p-4 flex flex-col justify-between h-full">
 <div>
 <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 mb-1">
