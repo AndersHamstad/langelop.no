@@ -8,7 +8,9 @@ import { format, parseISO, isAfter, isBefore } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import Footer from '../components/Footer';
+import TopNavPill from '../components/TopNavPill';
+
+
 import { useRouter } from 'next/router';
 import { CalendarToggle } from '../components/CalendarToggle'; // ⬅️ kalenderkomponenten
 
@@ -167,47 +169,67 @@ export default function Home({ races }) {
   return (
     <>
       {/* === Hero section with search === */}
-      <section className="relative bg-[url('/hero-2.jpg')] bg-cover bg-[position:center_60%] h-[40vh] md:h-[55vh] flex items-center justify-center text-white">
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 text-center px-4 w-full">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Ultraløp i Norge</h1>
-          <p className="text-lg md:text-l text-gray-200 max-w-2xl mx-auto">🏃 Finn din neste utfordring</p>
+<section className="relative bg-[url('/hero-2.jpg')] bg-cover bg-[position:center_60%] h-[40vh] md:h-[55vh] flex items-center justify-center text-white">
+  {/* Overlay */}
+  <div className="absolute inset-0 bg-black/40" />
 
-          <input
-            type="text"
-            placeholder="Søk etter løp..."
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="mt-6 w-full max-w-md mx-auto px-4 py-2 rounded-lg text-black text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+  {/* 🔗 Toppmeny (samme som på undersider) */}
+  <div className="absolute top-2 right-2 md:top-6 md:right-8 z-20">
+  <TopNavPill />
+</div>
 
-          {/* Infotekst: 2026 + nyhetsbrev (uten bakgrunn) */}
-          <div className="mt-10 max-w-md mx-auto">
-            <p className="text-xs md:text-sm text-white/90 leading-snug">
-              <span
-                aria-hidden
-                className="inline-block align-middle h-1.5 w-1.5 rounded-full bg-blue-400 mr-2"
-              />
-              Løp for <span className="font-semibold">2026</span> publiseres fortløpende.{` `}
-              <button
-                onClick={() => {
-                  document.getElementById('newsletter-anchor')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="underline underline-offset-2 decoration-white/60 hover:decoration-white font-medium"
-              >
-                Meld deg på nyhetsbrevet
-              </button>
-            </p>
-          </div>
+  {/* Hero-innhold */}
+  <div className="relative z-10 text-center px-4 w-full">
+    <h1 className="mt-12 md:mt-0 text-4xl md:text-5xl font-extrabold mb-4">
+  Ultraløp i Norge
+</h1>
 
-          <button
-            className="block md:hidden mt-4 text-sm text-blue-200 underline"
-            onClick={() => setShowMobileFilter(!showMobileFilter)}
-          >
-            {showMobileFilter ? 'Skjul filter' : 'Vis filter'}
-          </button>
-        </div>
-      </section>
+    <p className="text-lg md:text-l text-gray-200 max-w-2xl mx-auto">
+      🏃 Finn din neste utfordring
+    </p>
+
+    <input
+      type="text"
+      placeholder="Søk etter løp..."
+      value={searchQuery}
+      onChange={(e) => {
+        setSearchQuery(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="mt-6 w-full max-w-md mx-auto px-4 py-2 rounded-lg text-black text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+
+    {/* Infotekst */}
+    <div className="mt-10 max-w-md mx-auto">
+      <p className="text-xs md:text-sm text-white/90 leading-snug">
+        <span
+          aria-hidden
+          className="inline-block align-middle h-1.5 w-1.5 rounded-full bg-blue-400 mr-2"
+        />
+        Løp for <span className="font-semibold">2026</span> publiseres fortløpende.{` `}
+        <button
+          onClick={() => {
+            document
+              .getElementById('newsletter-anchor')
+              ?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="underline underline-offset-2 decoration-white/60 hover:decoration-white font-medium"
+        >
+          Meld deg på nyhetsbrevet
+        </button>
+      </p>
+    </div>
+
+    <button
+      className="block md:hidden mt-4 text-sm text-blue-200 underline"
+      onClick={() => setShowMobileFilter(!showMobileFilter)}
+    >
+      {showMobileFilter ? 'Skjul filter' : 'Vis filter'}
+    </button>
+  </div>
+</section>
+        
+
 
       {/* === Main content: filters + list === */}
       <div className="bg-gray-100 pt-5 px-4 pb-12 min-h-screen">
@@ -418,7 +440,6 @@ export default function Home({ races }) {
 
       {/* === Footer === */}
       <div id="newsletter-anchor"></div>
-      <Footer />
     </>
   );
 }

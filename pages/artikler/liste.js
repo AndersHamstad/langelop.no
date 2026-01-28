@@ -1,5 +1,4 @@
 // pages/artikler/liste.js
-import Footer from '../../components/Footer';
 import Head from 'next/head';
 import { articles } from '../../data/articles'; 
 
@@ -9,17 +8,6 @@ return (
 <Head>
 <title>Artikler | langeløp.no</title>
 </Head>
-
-
-{/* HEADER */}
-<header className="bg-white shadow">
-<div className="max-w-7xl mx-auto px-3 py-4 flex justify-between items-center">
-<a href="/" className="flex items-center space-x-2">
-<img src="/logo.png" alt="langeløp.no logo" className="h-10 w-15" />
-</a>
-</div>
-</header>
-
 
 <main className="bg-gray-100 py-10 px-4 min-h-screen">
 <div className="max-w-5xl mx-auto">
@@ -59,9 +47,6 @@ className="group bg-white rounded-xl shadow hover:shadow-md border border-gray-2
 </div>
 </div>
 </main>
-
-
-<Footer />
 </>
 );
 }

@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabaseClient';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import Footer from '../components/Footer';
 
 export async function getServerSideProps({ params }) {
   const { data: race, error } = await supabase
@@ -91,13 +90,6 @@ export default function RacePage({ race, comments }) {
 
   return (
     <>
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-3 py-4 flex justify-between items-center">
-          <a href="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="langeløp.no logo" className="h-10 w-15" />
-          </a>
-        </div>
-      </header>
 
       <main className="bg-gray-100 py-10 px-4 min-h-screen">
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow space-y-6">
@@ -210,19 +202,20 @@ export default function RacePage({ race, comments }) {
       </main>
 
       {/* Arrangør-info */}
-<div className="mt-10 text-center text-sm text-gray-600">
-  <strong>👋 Arrangerer du dette løpet?</strong>{" "}
-  Ta kontakt på{" "}
-  <a
-    href="mailto:post@langelop.no"
-    className="text-blue-600 underline hover:text-blue-800"
-  >
-    post@langelop.no
-  </a>{" "}
-  hvis du vil legge til eller endre detaljer.
-</div>
+<section className="bg-gray-100 py-16">
+  <div className="max-w-3xl mx-auto text-center text-sm text-gray-600 px-4">
+    <strong>👋 Arrangerer du dette løpet?</strong>{" "}
+    Ta kontakt på{" "}
+    <a
+      href="mailto:post@langelop.no"
+      className="text-blue-600 underline hover:text-blue-800"
+    >
+      post@langelop.no
+    </a>{" "}
+    hvis du vil legge til eller endre detaljer.
+  </div>
+</section>
 
-      <Footer />
     </>
   );
 }

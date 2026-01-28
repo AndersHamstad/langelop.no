@@ -26,7 +26,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-gray-900 text-gray-200 mt-16 px-6 py-12">
+    <footer className="bg-gray-900 text-gray-200 px-6 py-12">
       <div className="max-w-7xl mx-auto grid gap-8 md:grid-cols-3">
         {/* Om oss / logo */}
         <div>
