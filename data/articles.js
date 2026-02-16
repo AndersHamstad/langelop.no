@@ -18,7 +18,7 @@ export const articles = [
   date: "2025-10-03",
   author: "langelop.no",
   excerpt: "Hvordan kan du forberede deg til brutale høydemeter i fjellultra, når du bor et sted der alt er flatt? Her er seks konkrete tips.",
-  image: "https://aqigjepaomgykibkiklz.supabase.co/storage/v1/object/public/article-images/Ultra%202.jpg",
+  image: "https://aqigjepaomgykibkiklz.supabase.co/storage/v1/object/public/article-images/Hoydemeter.jpg",
   focusList: "center 22%",    // 👈 fokus i artikkellisten
   focusArticle: "center 70%", // 👈 fokus inne på artikkelsiden
   content: `## Ingress ...`
