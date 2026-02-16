@@ -20,30 +20,27 @@ export default function Artikkel({ source, frontMatter }) {
         {image && <meta property="og:image" content={image} />}
       </Head>
 
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <a href="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="langeløp.no logo" className="h-10 w-auto" />
-          </a>
-        </div>
-      </header>
-
       {/* Main content */}
       <main className="bg-gray-50 min-h-screen px-4 sm:px-6 pt-10 pb-20">
-        <article className="max-w-3xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
+        <article className="max-w-4xl mx-auto bg-white shadow-md rounded-xl overflow-hidden">
+
 
          {/* Bilde */}
 {image && (
-  <div className="w-full overflow-hidden rounded-t-xl">
+  <div className="relative w-full overflow-hidden rounded-t-xl">
     <img
       src={image}
       alt={title}
-      className="w-full h-[250px] object-cover rounded-t-xl"
-      style={{ objectPosition: focusArticle || 'center center' }}
+      className="w-full h-[340px] sm:h-[420px] object-cover"
+      style={{ objectPosition: focusArticle || "center 45%" }}
+      loading="eager"
     />
+    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 via-transparent to-transparent" />
   </div>
 )}
+
+
+
 
 
 
