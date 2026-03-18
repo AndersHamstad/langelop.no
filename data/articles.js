@@ -1,6 +1,15 @@
 // data/articles.js
 
 export const articles = [
+{
+  slug: 'hva-er-backyard-ultra',
+  title: 'Hva er backyard ultra? En guide for nybegynnere',
+  date: '2026-03-18',
+  author: 'Langeløp',
+  excerpt: 'En enkel runde på 6,7 km. Hver time. Til bare én løper er igjen. Backyard ultra er kanskje det rareste — og mest fascinerende — løpsformatet som finnes.',
+  image: 'https://therunningchannel.com/wp-content/uploads/2025/06/BACKYARD-header.jpg',
+  focusList: 'center 50%',
+},
 
   {
   slug: '100-ultraløp-på-100-dager',
