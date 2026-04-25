@@ -9,6 +9,7 @@ import NewsletterPopup from '../components/NewsletterPopup';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter } from 'next/router';
+import "leaflet/dist/leaflet.css";
 
 export default function MyApp({ Component, pageProps }) {
   const { pathname } = useRouter();

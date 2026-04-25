@@ -5,3 +5,27 @@
 html {
   scroll-behavior: smooth;
 }
+.langelop-cluster-wrapper {
+  background: transparent;
+  border: none;
+}
+
+.langelop-cluster-pin {
+  width: 44px;
+  height: 44px;
+  background: #2563eb;
+  color: white;
+  border: 3px solid white;
+  border-radius: 9999px 9999px 9999px 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.langelop-cluster-pin span {
+  transform: rotate(45deg);
+  font-weight: 700;
+  font-size: 14px;
+}
