@@ -275,16 +275,31 @@ export default function Home({ races, fetchError }) {
             🏃 Finn din neste utfordring
           </p>
 
-          <input
-            type="text"
-            placeholder="Søk etter løp..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="mt-6 w-full max-w-md mx-auto px-4 py-2 rounded-lg text-black text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="relative mt-4 md:mt-6 w-full max-w-md mx-auto px-4 md:px-0">
+  <span className="absolute left-8 md:left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+    🔍
+  </span>
+
+  <input
+    type="text"
+    placeholder="Søk etter løp..."
+    value={searchQuery}
+    onChange={(e) => {
+      setSearchQuery(e.target.value);
+      setCurrentPage(1);
+    }}
+    className="
+      w-full
+      h-[48px] md:h-12
+      pl-11 pr-4
+      rounded-xl
+      bg-white
+      text-gray-900 text-base
+      shadow-lg
+      focus:outline-none focus:ring-2 focus:ring-blue-500
+    "
+  />
+</div>
 
           
         </div>
@@ -423,16 +438,19 @@ export default function Home({ races, fetchError }) {
               </div>
             )}
 
-           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
 
   {/* Teller */}
-  <p className="text-gray-600 text-sm">
-    Viser <span className="font-medium">{activeCount}</span> av{" "}
-    <span className="font-medium">{races.length}</span> løp basert på dine kriterier.
-  </p>
+<p className="text-gray-800 text-sm whitespace-nowrap">
+  <span className="font-semibold text-gray-900">{activeCount}</span>
+  <span className="sm:hidden"> løp matcher filtrene</span>
+  <span className="hidden sm:inline">
+    {" "}av <span className="font-semibold text-gray-900">{races.length}</span> løp matcher filtrene
+  </span>
+</p>
 
   {/* Filter + View Toggle */}
-<div className="flex items-center justify-between w-full mt-4 md:mt-0">
+<div className="flex items-center justify-between w-full mt-1 md:mt-0">
 
   {/* Mobil filterknapp */}
   <button
