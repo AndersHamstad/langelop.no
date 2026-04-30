@@ -42,8 +42,22 @@ export async function getStaticProps({ params }) {
     .eq('approved', true)
     .order('created_at', { ascending: false });
 
+const { data: results, error: resultsError } = await supabase
+  .from('race_results')
+  .select('id, year, distance_km, position, name, laps, time_seconds, gender')
+  .eq('race_id', race.slug)
+  .eq('year', 2025)
+  .order('distance_km', { ascending: true })
+  .order('position', { ascending: true });
+
+console.log('RESULTS FOR', race.slug, results, resultsError);
+
   return {
-    props: { race, comments: comments || [] },
+    props: {
+      race,
+      comments: comments || [],
+      results: results || [],
+    },
     revalidate: 3600,
   };
 }
@@ -54,6 +68,16 @@ const formatDate = (dateString) => {
   } catch {
     return dateString;
   }
+};
+
+const formatTime = (seconds) => {
+  if (!seconds) return '';
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
 const truncateAtSentence = (text, maxChars = 400) => {
@@ -165,7 +189,7 @@ function CommentForm({ raceId, onSuccess }) {
   );
 }
 
-export default function RacePage({ race, comments }) {
+export default function RacePage({ race, comments, results }) {
   const [showFullDesc, setShowFullDesc] = useState(false);
 
   const distances = Array.isArray(race.distance)
@@ -182,7 +206,29 @@ export default function RacePage({ race, comments }) {
 
   const isUpcoming = race.date && new Date(race.date) >= new Date();
 
-  return (
+const resultTimes = results
+  .map((r) => r.time_seconds)
+  .filter(Boolean)
+  .sort((a, b) => a - b);
+
+const medianTime =
+  resultTimes.length > 0
+    ? resultTimes[Math.floor(resultTimes.length / 2)]
+    : null;
+
+const avgTime =
+  resultTimes.length > 0
+    ? Math.round(resultTimes.reduce((sum, t) => sum + t, 0) / resultTimes.length)
+    : null;
+
+const top25Index =
+  resultTimes.length > 0
+    ? Math.max(0, Math.floor(resultTimes.length * 0.25) - 1)
+    : null;
+
+const top25Time = top25Index !== null ? resultTimes[top25Index] : null;
+
+return (
     <>
       <Head>
         <title>{race.name} – Langeløp.no</title>
@@ -394,6 +440,112 @@ export default function RacePage({ race, comments }) {
               </div>
             )}
           </div>
+
+        {/* Resultater */}
+{results.length > 0 && (
+  <div className="bg-white rounded-2xl shadow-sm p-5 md:p-6">
+
+    <div className="mb-5">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-1">
+        Resultater 2025
+      </h2>
+    </div>
+
+    {/* Vinner */}
+    <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-700 text-white p-5 mb-5">
+      <p className="text-xs uppercase tracking-wide text-white/60 font-semibold mb-2">
+        Vinner 2025
+      </p>
+
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p className="text-xl font-bold">🥇 {results[0]?.name}</p>
+
+          {results[0]?.laps && (
+            <p className="text-sm text-white/70 mt-1">
+              {results[0].laps} runder
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold font-mono">
+            {formatTime(results[0]?.time_seconds)}
+          </span>
+
+          {results[0]?.laps && (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold">
+              {results[0].laps} runder
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Resultatliste */}
+    <div className="divide-y divide-gray-100">
+      {results.slice(1, 10).map((r) => {
+        const medalClass =
+          r.position === 2
+            ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-gray-800'
+            : r.position === 3
+            ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-950'
+            : 'bg-gray-100 text-gray-700';
+
+        const isTopThree = r.position <= 3;
+
+        return (
+          <div key={r.id}>
+            <div
+              className={`flex items-center justify-between gap-4 py-3 ${
+                isTopThree ? 'px-3 rounded-xl bg-gray-50' : ''
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span
+                  className={`w-9 h-9 rounded-full text-sm font-semibold flex items-center justify-center shrink-0 shadow-sm ${medalClass}`}
+                >
+                  {r.position}
+                </span>
+
+                <div className="min-w-0">
+                  <p
+                    className={`truncate ${
+                      isTopThree
+                        ? 'text-base font-semibold text-gray-900'
+                        : 'text-sm font-medium text-gray-900'
+                    }`}
+                  >
+                    {r.name}
+                  </p>
+
+                  {r.laps && (
+                    <p className="text-xs text-gray-400">
+                      {r.laps} runder
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-sm font-semibold text-gray-700 shrink-0 font-mono">
+                {formatTime(r.time_seconds)}
+              </p>
+            </div>
+
+            {r.position === 3 && <div className="h-3" />}
+          </div>
+        );
+      })}
+    </div>
+
+    {results.length > 10 && (
+      <p className="mt-4 text-xs text-gray-400">
+        Viser topp 10 av {results.length} registrerte resultater.
+      </p>
+    )}
+  </div>
+)}
+
 
           {/* Kommentarseksjon */}
           <div className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
