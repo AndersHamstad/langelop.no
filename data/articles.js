@@ -2,6 +2,16 @@
 
 export const articles = [
 {
+  slug: 'hva-bør-du-ha-med',
+  title: 'Hva bør du ha med deg på ultraløp? (50K vs 100K)',
+  date: '2026-05-11',
+  author: 'Langeløp',
+  excerpt: 'Hvor stor vest trenger man egentlig? Hvor mye mat? Og hva angrer folk på at de ikke tok med? Her er en praktisk guide til utstyr og pakkeliste for norske ultraløp.',
+  image: 'https://aqigjepaomgykibkiklz.supabase.co/storage/v1/object/public/article-images/ultrarun-gear%202.jpg',
+  focusList: 'center 50%',
+},
+
+  {
   slug: 'hva-er-backyard-ultra',
   title: 'Hva er backyard ultra? En guide for nybegynnere',
   date: '2026-03-18',
