@@ -2,6 +2,7 @@
 // Kjøres automatisk hver dag kl. 07:00 via Vercel Cron (se vercel.json)
 
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -66,7 +67,7 @@ async function getVercelStats() {
   return { yesterday, week, month };
 }
 
-// --- MailerLite: send e-post ---
+// --- Gmail: send e-post via nodemailer ---
 async function sendEmail({ newsletter, visitors }) {
   const { newYesterday, total } = newsletter;
   const v = visitors;
@@ -120,27 +121,20 @@ async function sendEmail({ newsletter, visitors }) {
     </div>
   `;
 
-  const res = await fetch('https://connect.mailerlite.com/api/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.MAILERLITE_API_KEY}`,
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
     },
-    body: JSON.stringify({
-      from: 'rapport@langelop.no',
-      from_name: 'Langeløp.no',
-      to: [{ email: process.env.REPORT_EMAIL }],
-      subject: `📊 Daglig rapport – ${new Date().toLocaleDateString('nb-NO')}`,
-      html,
-    }),
   });
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`MailerLite feil: ${err}`);
-  }
-
-  return res.json();
+  await transporter.sendMail({
+    from: `"Langeløp.no" <${process.env.GMAIL_USER}>`,
+    to: process.env.REPORT_EMAIL,
+    subject: `📊 Daglig rapport – ${new Date().toLocaleDateString('nb-NO')}`,
+    html,
+  });
 }
 
 export default async function handler(req, res) {
