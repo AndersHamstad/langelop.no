@@ -10,7 +10,7 @@ import { nb } from 'date-fns/locale';
 import {
   MapPin, Flag, Mountain, Globe, ArrowLeft,
   ChevronDown, ChevronUp, Share2, CalendarPlus,
-  ExternalLink, Trophy,
+  ExternalLink, Trophy, Calendar,
 } from 'lucide-react';
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ const formatTime = (seconds) => {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-const truncateAtSentence = (text, maxChars = 400) => {
+const truncateAtSentence = (text, maxChars = 650) => {
   if (!text) return '';
   if (text.length <= maxChars) return text;
   const slice = text.slice(0, maxChars);
@@ -267,6 +267,13 @@ function KeyFactsCard({ race, onShare, onCalendar, shareLabel }) {
       {/* Detaljer */}
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
         <div className="flex items-start gap-2 text-gray-700">
+          <Calendar size={15} className="mt-0.5 shrink-0 text-gray-400" />
+          <div>
+            <dt className="text-[10px] uppercase tracking-wide text-gray-400 font-medium">Dato</dt>
+            <dd className="font-medium">{formatDate(race.date)}</dd>
+          </div>
+        </div>
+        <div className="flex items-start gap-2 text-gray-700">
           <MapPin size={15} className="mt-0.5 shrink-0 text-gray-400" />
           <div>
             <dt className="text-[10px] uppercase tracking-wide text-gray-400 font-medium">Sted</dt>
@@ -285,7 +292,7 @@ function KeyFactsCard({ race, onShare, onCalendar, shareLabel }) {
             <Mountain size={15} className="mt-0.5 shrink-0 text-gray-400" />
             <div>
               <dt className="text-[10px] uppercase tracking-wide text-gray-400 font-medium">Høydemeter</dt>
-              <dd className="font-medium">{race.elevation_m.toLocaleString('nb-NO')} m</dd>
+              <dd className="font-medium">+{race.elevation_m.toLocaleString('nb-NO')} m</dd>
             </div>
           </div>
         )}
@@ -407,7 +414,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
         <div className="absolute top-3 left-3 md:top-6 md:left-8 z-20">
           <Link href="/"
@@ -450,7 +457,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
 
               {/* Beskrivelse */}
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+                <h2 className="text-base font-bold text-gray-900 mb-3">
                   Om løpet
                 </h2>
                 {race.description ? (
@@ -474,7 +481,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
 
               {/* Løypekart */}
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
+                <h2 className="text-base font-bold text-gray-900 mb-4">
                   Løypekart
                 </h2>
                 {race.strava_route_id ? (
@@ -577,7 +584,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
               {/* Kommentarer */}
               <div className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
                 <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
+                  <h2 className="text-base font-bold text-gray-900 mb-1">
                     Erfaringer fra løpere
                   </h2>
                   <p className="text-xs text-gray-400">
@@ -610,7 +617,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
               {/* Løp i nærheten */}
               {nearbyRaces.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm p-6">
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
+                  <h2 className="text-base font-bold text-gray-900 mb-4">
                     Andre løp i {race.region}
                   </h2>
                   {/* Horisontal scroll på mobil, grid på desktop */}
@@ -644,6 +651,16 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
           </div>
         </div>
       </main>
+
+      {/* Bunn-footer */}
+      <div className="bg-white border-t border-gray-200 px-4 py-8 mt-0">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <Link href="/" className="inline-flex items-center gap-1.5 hover:text-gray-900 transition">
+            <ArrowLeft size={14} /> Tilbake til alle løp
+          </Link>
+          <p>Savner du et løp? <a href="mailto:post@langelop.no" className="text-blue-600 hover:underline">Tips oss</a></p>
+        </div>
+      </div>
 
       {/* Mobil sticky CTA (kun kommende løp med påmeldingslenke) */}
       {isUpcoming && race.url && (
