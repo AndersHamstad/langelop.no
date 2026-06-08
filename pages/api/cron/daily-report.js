@@ -41,6 +41,7 @@ async function getVercelStats() {
   const token = process.env.VERCEL_API_TOKEN;
 
   const headers = { Authorization: `Bearer ${token}` };
+  const teamId = process.env.VERCEL_TEAM_ID;
   const base = `https://vercel.com/api/web-analytics/timeseries`;
 
   async function fetchVisitors(days) {
@@ -48,13 +49,17 @@ async function getVercelStats() {
     const start = new Date();
     start.setDate(start.getDate() - days);
 
-    const url = `${base}?projectId=${projectId}&startAt=${start.getTime()}&endAt=${end.getTime()}&environment=production&filter=%7B%7D`;
+    const from = start.toISOString().slice(0, 10);
+    const to = end.toISOString().slice(0, 10);
+
+    const url = `${base}?projectId=${projectId}&teamId=${teamId}&from=${from}&to=${to}&environment=production&filter=%7B%7D`;
     const res = await fetch(url, { headers });
     if (!res.ok) return null;
     const json = await res.json();
 
-    // Summer alle visitors på tvers av datapunkter
-    const total = (json.data ?? []).reduce((sum, d) => sum + (d.visitors ?? 0), 0);
+    // Summer unike enheter (devices) på tvers av alle datapunkter
+    const groups = json.data?.groups?.all ?? [];
+    const total = groups.reduce((sum, d) => sum + (d.devices ?? 0), 0);
     return total;
   }
 
