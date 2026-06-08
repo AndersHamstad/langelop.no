@@ -7,14 +7,13 @@ export default function NewsletterPopup() {
   const [subscribed, setSubscribed] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
   const [email, setEmail] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
 
-  // Sjekk om bruker tidligere har lukket eller abonnert
   useEffect(() => {
     const isDev = process.env.NODE_ENV === 'development';
     if (!isDev) {
-      // Sjekk om bruker tidligere har lukket eller abonnert
       const dismissed = localStorage.getItem('newsletterPopupDismissed') === 'true';
       if (dismissed) {
         setHasDismissed(true);
@@ -23,40 +22,48 @@ export default function NewsletterPopup() {
     }
   }, []);
 
-  // Vis popup når bruker har scrollet >300px, om ikke allerede abonnert eller avvist
   useEffect(() => {
+    let timer = null;
     function onScroll() {
-      if (window.scrollY > 300 && !subscribed && !hasDismissed) {
-        setVisible(true);
+      if (subscribed || hasDismissed) return;
+      const scrolled = window.scrollY + window.innerHeight;
+      const total = document.documentElement.scrollHeight;
+      if (scrolled / total > 0.6) {
+        timer = setTimeout(() => setVisible(true), 1000);
         window.removeEventListener('scroll', onScroll);
       }
     }
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+    };
   }, [subscribed, hasDismissed]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
-    setErrorMessage('');
+    setError('');
+    setLoading(true);
 
-    if (!email) {
-      setErrorMessage('Vennligst skriv inn en e-postadresse.');
-      return;
-    }
-
-    const { data, error } = await supabase
+    const { error: sbError } = await supabase
       .from('newsletter_subscribers')
       .insert([{ email, created_at: new Date().toISOString() }]);
 
-    if (error) {
-      console.error('Supabase error:', error);
-      setErrorMessage('Noe gikk galt ved påmelding. Prøv igjen.');
+    setLoading(false);
+
+    if (sbError) {
+      if (sbError.code === '23505') {
+        setError('Denne e-posten er allerede registrert.');
+      } else {
+        setError('Noe gikk galt. Prøv igjen.');
+      }
     } else {
       localStorage.setItem('newsletterPopupDismissed', 'true');
-      setSuccessMessage('Takk for påmeldingen!');
-      setSubscribed(true);
-      setVisible(false);
+      setDone(true);
+      setTimeout(() => {
+        setSubscribed(true);
+        setVisible(false);
+      }, 2500);
     }
   };
 
@@ -69,60 +76,90 @@ export default function NewsletterPopup() {
   if (!visible || subscribed) return null;
 
   return (
-    
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 relative">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+    >
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
 
-        {/* Banner-bilde øverst */}
-       <img
-        src="/newsletter-hero.jpg"
-        alt="Inspirasjon"
-        className="w-full h-40 object-cover rounded-t-lg mb-4"
-        style={{ objectPosition: 'center 25%' }}
-       />
-
-        {/* Lukkeknapp */}
-        <button
-          aria-label="Lukk"
-          onClick={handleClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
-        >
-          ×
-        </button>
-
-        <h2 className="text-xl font-semibold mb-2">Påfyll av inspirasjon?</h2>
-        <p className="text-sm mb-4">
-          Meld deg på nyhetsbrevet og få tips, erfaringer og kommende løp – rett i innboksen.
-        </p>
-
-        {errorMessage && <p className="text-red-600 mb-2 text-sm">{errorMessage}</p>}
-        {successMessage && <p className="text-green-600 mb-2 text-sm">{successMessage}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Din e-postadresse"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900"
-            >
-              Ikke idag...
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-            >
-              Jeg er med!
-            </button>
+        {done ? (
+          <div className="px-6 py-10 text-center">
+            <div className="text-4xl mb-3">🏔️</div>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Velkommen!</h2>
+            <p className="text-sm text-gray-500">Du hører fra oss snart.</p>
           </div>
-        </form>
+        ) : (
+          <div className="px-6 pt-7 pb-6">
+            {/* Close */}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xl leading-none"
+              aria-label="Lukk"
+            >
+              ×
+            </button>
+
+            {/* Heading */}
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-900 leading-snug">
+                Påfyll av inspirasjon?
+              </h2>
+              <p className="text-sm text-gray-500 mt-1.5">
+                Meld deg på det månedlige nyhetsbrevet for å få:
+              </p>
+            </div>
+
+            {/* What you get */}
+            <ul className="space-y-1.5 mb-5">
+              {[
+                '🏔️ Erfaringer og historier fra ultraløpere',
+                '📝 Race reviews - ærlige og personlige',
+                '🎒 Utstyrsguider og pakkelister',
+                '📅 Løp du bør ha på radaren',
+                '🎁 Tidlig tilgang til nye produkter',
+              ].map((item) => (
+                <li key={item} className="text-xs text-gray-600 flex items-start gap-2">
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-xs text-gray-400 -mt-2 mb-4">— rett i innboksen ☕️</p>
+
+            {error && <p className="text-red-500 text-xs mb-2">{error}</p>}
+
+            <form onSubmit={handleSubmit} className="space-y-2.5">
+              <input
+                type="email"
+                placeholder="din@epost.no"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3 rounded-xl text-sm transition disabled:opacity-60"
+              >
+                {loading ? 'Melder på...' : 'Ja, jeg vil være med →'}
+              </button>
+            </form>
+
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs font-semibold text-gray-700">
+                +150 løpere er allerede med
+              </p>
+              <button
+                onClick={handleClose}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Ikke nå
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
