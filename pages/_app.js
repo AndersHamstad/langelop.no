@@ -32,6 +32,11 @@ export default function MyApp({ Component, pageProps }) {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.langelop.no" />
         <meta property="og:image" content="https://www.langelop.no/hero-2.jpg" />
+        <link rel="canonical" href="https://www.langelop.no" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Ultraløp i Norge | langelop.no" />
+        <meta name="twitter:description" content="Finn ultraløp i Norge, få tips og del erfaringer fra landets vakreste løp." />
+        <meta name="twitter:image" content="https://www.langelop.no/hero-2.jpg" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/favicon.png" />

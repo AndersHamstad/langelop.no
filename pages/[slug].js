@@ -394,10 +394,16 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
       <Head>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
+        <link rel="canonical" href={`https://www.langelop.no/${race.slug}`} />
         <meta property="og:title" content={`${race.name} – ${formatDate(race.date)}`} />
         <meta property="og:description" content={seoDesc} />
-        {race.image_url && <meta property="og:image" content={race.image_url} />}
+        <meta property="og:url" content={`https://www.langelop.no/${race.slug}`} />
         <meta property="og:type" content="website" />
+        {race.image_url && <meta property="og:image" content={race.image_url} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${race.name} – ${formatDate(race.date)}`} />
+        <meta name="twitter:description" content={seoDesc} />
+        {race.image_url && <meta name="twitter:image" content={race.image_url} />}
         <script type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Head>
