@@ -9,6 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+
 export default async function handler(req, res) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -65,10 +66,10 @@ export default async function handler(req, res) {
         ${total} nye hendelse${total !== 1 ? 'r' : ''} siste 24 timer
       </p>
 
-      <div style="background:#f9f9f9;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:8px;">
-        Totalt <b>${totalCount}</b> nyhetsbrevabonnenter
-        ${newCount > 0 ? `&nbsp;&nbsp;<span style="color:#16a34a;font-weight:bold;">+${newCount} nye i dag</span>` : ''}
+      <div style="background:#f9f9f9;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:8px;display:flex;gap:24px;flex-wrap:wrap;">
+        <span>Nyhetsbrev: <b>${totalCount}</b> abonnenter${newCount > 0 ? ` <span style="color:#16a34a;font-weight:bold;">+${newCount} nye</span>` : ''}</span>
       </div>
+
 
       ${section('', 'Nye nyhetsbrevabonnenter', subscribers.data,
         (r) => [r.email, fmt(r.created_at)]
