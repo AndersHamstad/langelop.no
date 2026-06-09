@@ -643,9 +643,9 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                     Ta kontakt så hjelper vi deg å oppdatere informasjonen.
                   </p>
                 </div>
-                <a href="mailto:post@langelop.no"
+                <a href="/for-arrangorer"
                   className="shrink-0 inline-block px-4 py-2 bg-white border border-blue-200 text-blue-700 text-sm font-semibold rounded-xl hover:bg-blue-100 transition">
-                  Ta kontakt
+                  Oppdater informasjon
                 </a>
               </div>
             </div>

@@ -1,6 +1,5 @@
 // components/NewsletterPopup.jsx
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
 
 export default function NewsletterPopup() {
   const [visible, setVisible] = useState(false);
@@ -45,18 +44,16 @@ export default function NewsletterPopup() {
     setError('');
     setLoading(true);
 
-    const { error: sbError } = await supabase
-      .from('newsletter_subscribers')
-      .insert([{ email, created_at: new Date().toISOString() }]);
-
+    const res = await fetch('/api/newsletter-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const json = await res.json().catch(() => ({}));
     setLoading(false);
 
-    if (sbError) {
-      if (sbError.code === '23505') {
-        setError('Denne e-posten er allerede registrert.');
-      } else {
-        setError('Noe gikk galt. Prøv igjen.');
-      }
+    if (!res.ok) {
+      setError(json.error || 'Noe gikk galt. Prøv igjen.');
     } else {
       localStorage.setItem('newsletterPopupDismissed', 'true');
       setDone(true);

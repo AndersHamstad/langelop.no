@@ -876,6 +876,16 @@ export default function Home({ races, fetchError }) {
           </div>
         </div>
 
+        {/* ── Arrangør-stripe ─────────────────────────────────────────────────── */}
+        <div className="md:hidden max-w-7xl mx-auto px-4 mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Savner du et løp på listen?{' '}
+            <Link href="/for-arrangorer" className="font-semibold text-gray-800 hover:underline">
+              Meld inn gratis →
+            </Link>
+          </p>
+        </div>
+
         {/* ── Article teaser ──────────────────────────────────────────────────── */}
         {viewMode === 'cards' && (
           <div className="max-w-7xl mx-auto mt-16 px-0">

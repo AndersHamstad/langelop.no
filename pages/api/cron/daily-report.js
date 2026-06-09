@@ -9,157 +9,108 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- Supabase: nye nyhetsbrevabonnenter ---
-async function getNewsletterStats() {
-  const now = new Date();
-
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
-
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-
-  const { count, error } = await supabase
-    .from('newsletter_subscribers')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', yesterday.toISOString())
-    .lt('created_at', todayStart.toISOString());
-
-  const { count: total } = await supabase
-    .from('newsletter_subscribers')
-    .select('*', { count: 'exact', head: true });
-
-  if (error) console.error('Supabase error:', error);
-
-  return { newYesterday: count ?? 0, total: total ?? 0 };
-}
-
-// --- Vercel Analytics: besøkende ---
-async function getVercelStats() {
-  const projectId = process.env.VERCEL_PROJECT_ID;
-  const token = process.env.VERCEL_API_TOKEN;
-
-  const headers = { Authorization: `Bearer ${token}` };
-  const teamId = process.env.VERCEL_TEAM_ID;
-  const base = `https://vercel.com/api/web-analytics/timeseries`;
-
-  async function fetchVisitors(days) {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-
-    const from = start.toISOString().slice(0, 10);
-    const to = end.toISOString().slice(0, 10);
-
-    const url = `${base}?projectId=${projectId}&teamId=${teamId}&from=${from}&to=${to}&environment=production&filter=%7B%7D`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) return null;
-    const json = await res.json();
-
-    // Summer unike enheter (devices) på tvers av alle datapunkter
-    const groups = json.data?.groups?.all ?? [];
-    const total = groups.reduce((sum, d) => sum + (d.devices ?? 0), 0);
-    return total;
+export default async function handler(req, res) {
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const [yesterday, week, month] = await Promise.all([
-    fetchVisitors(1),
-    fetchVisitors(7),
-    fetchVisitors(30),
-  ]);
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  return { yesterday, week, month };
-}
+  const [subscribers, totalSubscribersRes, utstyrReviews, produktReviews, raceSubmissions, raceUpdates] =
+    await Promise.all([
+      supabase.from('newsletter_subscribers').select('email, created_at').gte('created_at', since),
+      supabase.from('newsletter_subscribers').select('email'),
+      supabase.from('utstyr_reviews').select('produkt_id, navn, rating, kommentar, created_at').gte('created_at', since),
+      supabase.from('produkt_reviews').select('produkt_id, navn, rating, kommentar, created_at').gte('created_at', since),
+      supabase.from('race_submissions').select('navn, dato, distanse, sted, region, kontakt_navn, kontakt_epost, created_at').gte('created_at', since),
+      supabase.from('race_updates').select('lop_navn, endring, kontakt_epost, created_at').gte('created_at', since),
+    ]);
 
-// --- Gmail: send e-post via nodemailer ---
-async function sendEmail({ newsletter, visitors }) {
-  const { newYesterday, total } = newsletter;
-  const v = visitors;
+  const newCount = subscribers.data?.length || 0;
+  const totalCount = totalSubscribersRes.data?.length ?? 0;
+  const total =
+    newCount +
+    (utstyrReviews.data?.length || 0) +
+    (produktReviews.data?.length || 0) +
+    (raceSubmissions.data?.length || 0) +
+    (raceUpdates.data?.length || 0);
 
-  const formatNum = (n) => (n === null ? 'Ikke tilgjengelig' : n.toLocaleString('nb-NO'));
+  if (total === 0) {
+    console.log('Ingen nye hendelser siste 24t – hopper over e-post.');
+    return res.status(200).json({ ok: true, sent: false });
+  }
+
+  const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const fmt = (d) => new Date(d).toLocaleString('nb-NO', { dateStyle: 'short', timeStyle: 'short' });
+
+  function section(emoji, title, items, renderRow) {
+    if (!items?.length) return '';
+    return `
+      <h2 style="font-size:15px;margin:28px 0 8px;color:#111;border-top:1px solid #eee;padding-top:20px;">
+        ${emoji} ${title} <span style="color:#999;font-weight:normal;">(${items.length})</span>
+      </h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        ${items.map((r) => `<tr>${renderRow(r).map(c =>
+          `<td style="padding:6px 8px;border-bottom:1px solid #f5f5f5;color:#333;vertical-align:top;">${c}</td>`
+        ).join('')}</tr>`).join('')}
+      </table>
+    `;
+  }
 
   const html = `
-    <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #111;">
-      <h2 style="font-size: 20px; margin-bottom: 4px;">📊 Daglig rapport – Langeløp.no</h2>
-      <p style="color: #666; font-size: 14px; margin-top: 0;">${new Date().toLocaleDateString('nb-NO', { dateStyle: 'long' })}</p>
+    <div style="font-family:sans-serif;max-width:600px;color:#111;">
+      <h1 style="font-size:20px;margin-bottom:4px;">Daglig oppdatering – langelop.no</h1>
+      <p style="color:#888;font-size:13px;margin-bottom:8px;">
+        ${new Date().toLocaleDateString('nb-NO', { dateStyle: 'long' })} &nbsp;·&nbsp;
+        ${total} nye hendelse${total !== 1 ? 'r' : ''} siste 24 timer
+      </p>
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 24px;">
-        <tr>
-          <td colspan="2" style="font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; padding-bottom: 8px;">
-            Nyhetsbrev
-          </td>
-        </tr>
-        <tr style="background: #f9f9f9;">
-          <td style="padding: 10px 12px; border-radius: 6px 0 0 6px;">Nye abonnenter i går</td>
-          <td style="padding: 10px 12px; font-weight: bold; text-align: right; border-radius: 0 6px 6px 0;">${newYesterday}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px 12px;">Totalt antall abonnenter</td>
-          <td style="padding: 10px 12px; font-weight: bold; text-align: right;">${formatNum(total)}</td>
-        </tr>
-      </table>
+      <div style="background:#f9f9f9;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:8px;">
+        Totalt <b>${totalCount}</b> nyhetsbrevabonnenter
+        ${newCount > 0 ? `&nbsp;&nbsp;<span style="color:#16a34a;font-weight:bold;">+${newCount} nye i dag</span>` : ''}
+      </div>
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 28px;">
-        <tr>
-          <td colspan="2" style="font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; padding-bottom: 8px;">
-            Besøkende
-          </td>
-        </tr>
-        <tr style="background: #f9f9f9;">
-          <td style="padding: 10px 12px; border-radius: 6px 0 0 6px;">I går</td>
-          <td style="padding: 10px 12px; font-weight: bold; text-align: right; border-radius: 0 6px 6px 0;">${formatNum(v.yesterday)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px 12px;">Siste 7 dager</td>
-          <td style="padding: 10px 12px; font-weight: bold; text-align: right;">${formatNum(v.week)}</td>
-        </tr>
-        <tr style="background: #f9f9f9;">
-          <td style="padding: 10px 12px; border-radius: 6px 0 0 6px;">Siste 30 dager</td>
-          <td style="padding: 10px 12px; font-weight: bold; text-align: right; border-radius: 0 6px 6px 0;">${formatNum(v.month)}</td>
-        </tr>
-      </table>
+      ${section('', 'Nye nyhetsbrevabonnenter', subscribers.data,
+        (r) => [r.email, fmt(r.created_at)]
+      )}
 
-      <p style="margin-top: 32px; font-size: 12px; color: #aaa;">
-        Sendt automatisk fra Langeløp.no
+      ${section('', 'Innmeldte løp', raceSubmissions.data,
+        (r) => [`<b>${r.navn}</b>`, r.dato, r.distanse, `${r.sted}, ${r.region}`, `${r.kontakt_navn}<br/>${r.kontakt_epost}`]
+      )}
+
+      ${section('', 'Oppdateringsforslag', raceUpdates.data,
+        (r) => [`<b>${r.lop_navn}</b>`, r.endring, r.kontakt_epost]
+      )}
+
+      ${section('', 'Sokke-anmeldelser (til godkjenning)', produktReviews.data,
+        (r) => [`<b>${r.navn}</b>`, stars(r.rating), r.kommentar || '–']
+      )}
+
+      ${section('', 'Utstyrsanmeldelser (til godkjenning)', utstyrReviews.data,
+        (r) => [`<b>${r.produkt_id}</b>`, r.navn, stars(r.rating), r.kommentar || '–']
+      )}
+
+      <p style="margin-top:32px;font-size:11px;color:#bbb;">
+        Anmeldelser godkjennes i Supabase-dashbordet. Sendt automatisk fra langelop.no.
       </p>
     </div>
   `;
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"Langeløp.no" <${process.env.GMAIL_USER}>`,
-    to: process.env.REPORT_EMAIL,
-    subject: `📊 Daglig rapport – ${new Date().toLocaleDateString('nb-NO')}`,
-    html,
-  });
-}
-
-export default async function handler(req, res) {
-  // Sikre at bare Vercel Cron (eller deg selv) kan kalle denne
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   try {
-    const [newsletter, visitors] = await Promise.all([
-      getNewsletterStats(),
-      getVercelStats(),
-    ]);
-
-    await sendEmail({ newsletter, visitors });
-
-    return res.status(200).json({ ok: true, newsletter, visitors });
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+    });
+    await transporter.sendMail({
+      from: `"Langeløp.no" <${process.env.GMAIL_USER}>`,
+      to: process.env.REPORT_EMAIL,
+      subject: `📊 Daglig rapport – ${total} nye hendelse${total !== 1 ? 'r' : ''} · ${new Date().toLocaleDateString('nb-NO')}`,
+      html,
+    });
   } catch (err) {
-    console.error('Daily report error:', err);
-    return res.status(500).json({ error: err.message });
+    console.error('E-post feilet:', err);
+    return res.status(500).json({ error: 'E-post feilet' });
   }
+
+  return res.status(200).json({ ok: true, sent: true, total });
 }
