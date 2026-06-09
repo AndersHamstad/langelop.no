@@ -4,7 +4,7 @@ import Script from 'next/script';
 import Link from 'next/link';
 import { supabase } from '../lib/supabaseClient';
 import { buildRaceJsonLd } from '../lib/structuredData';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import {
@@ -248,7 +248,7 @@ function NearbyRaceCard({ race }) {
 
 // ─── KeyFactsCard ─────────────────────────────────────────────────────────────
 
-function KeyFactsCard({ race, onShare, onCalendar, shareLabel }) {
+function KeyFactsCard({ race, onShare, onCalendar, shareLabel, ctaRef }) {
   const distances = Array.isArray(race.distance) ? race.distance : race.distance?.split(',') || [];
   const isUpcoming = race.date && new Date(race.date) >= new Date();
 
@@ -315,7 +315,7 @@ function KeyFactsCard({ race, onShare, onCalendar, shareLabel }) {
 
       {/* CTA */}
       {isUpcoming && race.url && (
-        <a href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
+        <a ref={ctaRef} href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
           target="_blank" rel="noreferrer"
           className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition">
           Meld deg på
@@ -345,6 +345,23 @@ function KeyFactsCard({ race, onShare, onCalendar, shareLabel }) {
 export default function RacePage({ race, comments, results, nearbyRaces }) {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [shareLabel, setShareLabel] = useState('Del');
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    function check() {
+      if (!ctaRef.current) return;
+      const rect = ctaRef.current.getBoundingClientRect();
+      setShowStickyCta(rect.bottom < 0 || rect.top > window.innerHeight);
+    }
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, []);
 
   // Resultater: dynamisk årsvalg
   const availableYears = [...new Set(results.map((r) => r.year))].sort((a, b) => b - a);
@@ -387,7 +404,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
     downloadICS(race);
   }
 
-  const sharedCardProps = { race, onShare: handleShare, onCalendar: handleCalendar, shareLabel };
+  const sharedCardProps = { race, onShare: handleShare, onCalendar: handleCalendar, shareLabel, ctaRef };
 
   return (
     <>
@@ -652,7 +669,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
 
             {/* ── Høyre kolonne (kun desktop, sticky) ── */}
             <aside className="hidden lg:block lg:sticky lg:top-6 space-y-4">
-              <KeyFactsCard {...sharedCardProps} />
+              <KeyFactsCard {...sharedCardProps} ctaRef={undefined} />
             </aside>
           </div>
         </div>
@@ -668,8 +685,8 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
         </div>
       </div>
 
-      {/* Mobil sticky CTA (kun kommende løp med påmeldingslenke) */}
-      {isUpcoming && race.url && (
+      {/* Mobil sticky CTA — vises kun når hoved-CTA er scrollet ut av syne */}
+      {isUpcoming && race.url && showStickyCta && (
         <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-white border-t border-gray-200 px-4 py-3 flex gap-3">
           <a href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
             target="_blank" rel="noreferrer"

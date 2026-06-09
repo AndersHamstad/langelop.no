@@ -29,7 +29,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto grid gap-10 md:grid-cols-3">
 
         {/* Om oss */}
-        <div>
+        <div className="order-3 md:order-1">
           <div className="flex items-center space-x-3 mb-3">
             <img src="/logo2.png" alt="Langeløp logo" className="h-8 w-auto" />
             <span className="text-xl font-bold text-white">langelop.no</span>
@@ -45,7 +45,7 @@ export default function Footer() {
         </div>
 
         {/* For arrangører */}
-        <div>
+        <div className="order-2 md:order-2">
           <h3 className="text-base font-bold text-white mb-1">For arrangører</h3>
           <p className="text-sm text-gray-400 leading-relaxed mb-4">
             Mangler løpet ditt på listen? Meld det inn gratis — vi legger det til innen kort tid.
@@ -67,7 +67,7 @@ export default function Footer() {
         </div>
 
         {/* Nyhetsbrev */}
-        <div>
+        <div className="order-1 md:order-3">
           <h3 className="text-base font-bold text-white mb-1">📩 Nyhetsbrev</h3>
           <p className="text-sm text-gray-400 leading-relaxed mb-4">
             Inspirasjon, tips og erfaringer fra norske ultraløpere — rett i innboksen én gang i måneden.
