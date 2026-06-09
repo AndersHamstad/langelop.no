@@ -2,11 +2,11 @@
 
 import { supabase } from '../lib/supabaseClient';
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Range } from 'react-range';
 import { format, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import DatePicker from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+registerLocale('nb', nb);
 import TopNavPill from '../components/TopNavPill';
 import { CalendarToggle } from '../components/CalendarToggle';
 import dynamic from 'next/dynamic';
@@ -50,6 +50,7 @@ const DISTANCE_PRESETS = [
   { label: '100+ km', min: 100, max: 200 },
 ];
 
+
 export async function getStaticProps() {
   const { data: races, error } = await supabase.from('races').select('*');
 
@@ -65,11 +66,14 @@ export async function getStaticProps() {
 
 export default function Home({ races, fetchError }) {
   const [distanceRange, setDistanceRange] = useState([0, 200]);
+  const [showCustomDistance, setShowCustomDistance] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [regionFilter, setRegionFilter] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('alle'); // 'alle' | 'Ultra' | 'Backyard'
+  const [showAllRegions, setShowAllRegions] = useState(false);
   const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
   const [sortMethod, setSortMethod] = useState('date');
   const [showMobileFilter, setShowMobileFilter] = useState(false);
@@ -109,6 +113,7 @@ export default function Home({ races, fetchError }) {
     [races]
   );
 
+
   // Races in the next 14 days
   const comingUp = useMemo(() => {
     const today = startOfDay(new Date());
@@ -143,9 +148,11 @@ export default function Home({ races, fetchError }) {
   const nullstillFilter = () => {
     setSearchQuery('');
     setDistanceRange([0, maxSliderValue]);
+    setShowCustomDistance(false);
     setStartDate(null);
     setEndDate(null);
     setRegionFilter([]);
+    setTypeFilter('alle');
     setVisibleCount(12);
   };
 
@@ -188,13 +195,14 @@ export default function Home({ races, fetchError }) {
             if (startDate && isBefore(date, startDate)) return false;
             if (endDate && isAfter(date, endDate)) return false;
             return true;
-          } catch {
-            return false;
-          }
+          } catch { return false; }
         })();
 
         const matchesRegion =
           regionFilter.length === 0 || regionFilter.includes(race.region);
+
+        const matchesType =
+          typeFilter === 'alle' || (race.type || 'Ultra') === typeFilter;
 
         const matchesUpcoming = (() => {
           if (!effectiveOnlyUpcoming) return true;
@@ -206,7 +214,7 @@ export default function Home({ races, fetchError }) {
           }
         })();
 
-        return matchesSearch && matchesDistance && matchesDate && matchesRegion && matchesUpcoming;
+        return matchesSearch && matchesDistance && matchesDate && matchesRegion && matchesUpcoming && matchesType;
       })
       .sort((a, b) => {
         try {
@@ -219,7 +227,7 @@ export default function Home({ races, fetchError }) {
           return 0;
         }
       });
-  }, [races, searchQuery, distanceRange, startDate, endDate, regionFilter, onlyUpcoming, sortMethod]);
+  }, [races, searchQuery, distanceRange, startDate, endDate, regionFilter, onlyUpcoming, sortMethod, typeFilter]);
 
   // Kalender / kart
   const filteredRaces2026 = useMemo(() => {
@@ -243,18 +251,17 @@ export default function Home({ races, fetchError }) {
             if (startDate && isBefore(date, startDate)) return false;
             if (endDate && isAfter(date, endDate)) return false;
             return true;
-          } catch {
-            return false;
-          }
+          } catch { return false; }
         })();
         const matchesRegion = regionFilter.length === 0 || regionFilter.includes(race.region);
+        const matchesType = typeFilter === 'alle' || (race.type || 'Ultra') === typeFilter;
         const is2026OrLater = (() => {
           try { return new Date(race.date) >= cutoffDate; } catch { return false; }
         })();
-        return matchesSearch && matchesDistance && matchesDateFilter && matchesRegion && is2026OrLater;
+        return matchesSearch && matchesDistance && matchesDateFilter && matchesRegion && is2026OrLater && matchesType;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [races, searchQuery, distanceRange, startDate, endDate, regionFilter, sortMethod]);
+  }, [races, searchQuery, distanceRange, startDate, endDate, regionFilter, sortMethod, typeFilter]);
 
   const activeCount = viewMode === 'cards' ? filteredRaces.length : filteredRaces2026.length;
 
@@ -262,9 +269,37 @@ export default function Home({ races, fetchError }) {
     searchQuery.trim().length > 0 ||
     distanceRange[0] !== 0 ||
     distanceRange[1] !== maxSliderValue ||
+    typeFilter !== 'alle' ||
     startDate !== null ||
     endDate !== null ||
     regionFilter.length > 0;
+
+  // Count for mobile filter badge
+  const activeFilterCount = [
+    searchQuery.trim().length > 0,
+    distanceRange[0] !== 0 || distanceRange[1] !== maxSliderValue,
+    typeFilter !== 'alle',
+    startDate !== null || endDate !== null,
+    regionFilter.length > 0,
+  ].filter(Boolean).length;
+
+  // Active filter tags (for chips row above results)
+  const fmtDate = (d) => d ? format(d, 'MMM yyyy', { locale: nb }) : null;
+  const dateLabel = startDate && endDate
+    ? `${fmtDate(startDate)} – ${fmtDate(endDate)}`
+    : startDate ? `Fra ${fmtDate(startDate)}`
+    : endDate   ? `Til ${fmtDate(endDate)}`
+    : null;
+
+  const activeFilterTags = [
+    ...(searchQuery.trim() ? [{ label: `"${searchQuery}"`, clear: () => setSearchQuery('') }] : []),
+    ...(typeFilter !== 'alle' ? [{ label: typeFilter, clear: () => setTypeFilter('alle') }] : []),
+    ...(distanceRange[0] !== 0 || distanceRange[1] !== maxSliderValue
+      ? [{ label: showCustomDistance ? `${distanceRange[0]}–${distanceRange[1]} km` : activePreset?.label || `${distanceRange[0]}–${distanceRange[1]} km`, clear: () => { setDistanceRange([0, maxSliderValue]); setShowCustomDistance(false); } }]
+      : []),
+    ...(dateLabel ? [{ label: dateLabel, clear: () => { setStartDate(null); setEndDate(null); } }] : []),
+    ...regionFilter.map((r) => ({ label: r, clear: () => handleRegionChange(r) })),
+  ];
 
   const racesPerPage = 12;
   const [currentPage, setCurrentPage] = useState(1);
@@ -303,6 +338,56 @@ export default function Home({ races, fetchError }) {
 
   return (
     <>
+      {/* ── DatePicker custom styles ────────────────────────────────────────── */}
+      <style>{`
+        .react-datepicker {
+          font-family: inherit;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+          overflow: hidden;
+        }
+        .react-datepicker__header {
+          background: #fff;
+          border-bottom: 1px solid #f3f4f6;
+          padding: 12px 8px 8px;
+        }
+        .react-datepicker__current-month,
+        .react-datepicker-year-header {
+          font-size: 13px;
+          font-weight: 600;
+          color: #111827;
+        }
+        .react-datepicker__navigation-icon::before {
+          border-color: #6b7280;
+        }
+        .react-datepicker__month-wrapper {
+          margin: 4px 0;
+        }
+        .react-datepicker__month-text {
+          font-size: 12px !important;
+          padding: 6px 4px !important;
+          border-radius: 6px !important;
+          margin: 2px !important;
+          color: #374151;
+        }
+        .react-datepicker__month-text:hover {
+          background: #f3f4f6 !important;
+        }
+        .react-datepicker__month-text--selected,
+        .react-datepicker__month-text--keyboard-selected {
+          background: #111827 !important;
+          color: #fff !important;
+          font-weight: 600;
+        }
+        .react-datepicker__month-text--in-range {
+          background: #f3f4f6 !important;
+          color: #111827 !important;
+        }
+        .react-datepicker__triangle { display: none; }
+        #datepicker-portal { z-index: 9999; }
+      `}</style>
+
       {/* ── Sticky search bar ───────────────────────────────────────────────── */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-200 ${
@@ -329,7 +414,7 @@ export default function Home({ races, fetchError }) {
                   onClick={() => setDistanceRange([p.min, p.max])}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition whitespace-nowrap ${
                     activePreset?.label === p.label
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-gray-900 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -439,110 +524,166 @@ export default function Home({ races, fetchError }) {
 
           {/* ── Sidebar filter ──────────────────────────────────────────────── */}
           <div className={`md:w-1/5 mb-6 md:mb-0 ${showMobileFilter ? 'block' : 'hidden'} md:block`}>
-            <div className="bg-white p-6 rounded-xl shadow space-y-6 sticky top-[15px]">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={onlyUpcoming}
-                  onChange={() => setOnlyUpcoming((prev) => !prev)}
-                  className="rounded text-blue-600"
-                />
-                <label className="text-sm text-gray-700">Vis kun kommende løp</label>
-              </div>
+            <div className="bg-white p-4 rounded-xl shadow space-y-5 sticky top-[15px]">
 
+              {/* Type løp */}
               <div>
-                <select
-                  value={sortMethod}
-                  onChange={(e) => setSortMethod(e.target.value)}
-                  className="w-full max-w-[188px] px-3 py-2 rounded border border-gray-300 text-sm text-gray-700"
-                >
-                  <option value="date">Sorter etter dato</option>
-                  <option value="distanceAsc">Distanse (lav–høy)</option>
-                  <option value="distanceDesc">Distanse (høy–lav)</option>
-                </select>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Type løp</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[{ val: 'alle', label: 'Alle' }, { val: 'Ultra', label: 'Ultra' }, { val: 'Backyard', label: 'Backyard' }].map(({ val, label }) => (
+                    <button
+                      key={val}
+                      onClick={() => setTypeFilter(val)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                        typeFilter === val
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              {/* Distanse */}
               <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Distanse:{' '}
-                  <span className="font-medium">
-                    {distanceRange[0]}–{distanceRange[1] === maxSliderValue ? '200+' : distanceRange[1]} km
-                  </span>
-                </label>
-
-                <Range
-                  step={1}
-                  min={0}
-                  max={maxSliderValue}
-                  values={distanceRange}
-                  onChange={(range) => setDistanceRange(range)}
-                  renderTrack={({ props, children }) => (
-                    <div {...props} className="h-2 bg-gray-200 rounded-full">
-                      {children}
-                    </div>
-                  )}
-                  renderThumb={({ props }) => (
-                    <div
-                      {...props}
-                      className="w-5 h-5 bg-blue-500 rounded-full shadow border border-white"
-                    />
-                  )}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Tidsperiode:</label>
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date) => setStartDate(date)}
-                  dateFormat="dd.MM.yyyy"
-                  placeholderText="Velg startdato"
-                  className="w-full px-3 py-2 mb-2 rounded border border-gray-300 text-sm text-gray-700"
-                />
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date) => setEndDate(date)}
-                  dateFormat="dd.MM.yyyy"
-                  placeholderText="Velg sluttdato"
-                  className="w-full px-3 py-2 rounded border border-gray-300 text-sm text-gray-700"
-                />
-              </div>
-
-              <div className="relative" ref={dropdownRef}>
-                <label className="block text-sm text-gray-600 mb-1">Område</label>
-                <div
-                  onClick={() => setRegionDropdownOpen(!regionDropdownOpen)}
-                  className="w-full max-w-[188px] h-[38px] px-3 py-2 border rounded border-gray-300 text-sm text-gray-700 bg-white flex items-center cursor-pointer"
-                >
-                  {regionFilter.length === 0 ? 'Velg fylke' : regionFilter.join(', ')}
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Distanse</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DISTANCE_PRESETS.map((p) => {
+                    const isActive = !showCustomDistance && distanceRange[0] === p.min && distanceRange[1] === p.max;
+                    return (
+                      <button
+                        key={p.label}
+                        onClick={() => { setDistanceRange([p.min, p.max]); setShowCustomDistance(false); }}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setShowCustomDistance((v) => !v)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                      showCustomDistance
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Egendefinert
+                  </button>
                 </div>
 
-                {regionDropdownOpen && (
-                  <div className="absolute z-10 mt-2 w-full max-h-48 overflow-y-auto bg-white border border-gray-300 rounded shadow-md p-2 space-y-1">
-                    {uniqueRegions.map((region) => (
-                      <label
-                        key={region}
-                        className="flex items-center space-x-2 text-sm text-gray-700"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={regionFilter.includes(region)}
-                          onChange={() => handleRegionChange(region)}
-                          className="rounded text-blue-600"
-                        />
-                        <span>{region}</span>
-                      </label>
-                    ))}
+                {showCustomDistance && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="500"
+                      placeholder="Fra km"
+                      value={distanceRange[0] === 0 ? '' : distanceRange[0]}
+                      onChange={(e) => setDistanceRange([Number(e.target.value) || 0, distanceRange[1]])}
+                      className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
+                    <span className="text-gray-400 text-xs flex-shrink-0">–</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="500"
+                      placeholder="Til km"
+                      value={distanceRange[1] === 200 ? '' : distanceRange[1]}
+                      onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value) || 200])}
+                      className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={nullstillFilter}
-                className="text-sm text-blue-600 underline hover:text-blue-800"
-              >
-                Nullstill filter
-              </button>
+              {/* Tidsperiode */}
+              <div>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Tidsperiode</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-400 mb-0.5 block">Fra</label>
+                    <DatePicker
+                      selected={startDate}
+                      onChange={(d) => setStartDate(d)}
+                      selectsStart
+                      startDate={startDate}
+                      endDate={endDate}
+                      showMonthYearPicker
+                      dateFormat="MMM yyyy"
+                      locale="nb"
+                      placeholderText="Velg måned"
+                      portalId="datepicker-portal"
+                      popperPlacement="bottom-start"
+                      className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-400 mb-0.5 block">Til</label>
+                    <DatePicker
+                      selected={endDate}
+                      onChange={(d) => setEndDate(d)}
+                      selectsEnd
+                      startDate={startDate}
+                      endDate={endDate}
+                      minDate={startDate}
+                      showMonthYearPicker
+                      dateFormat="MMM yyyy"
+                      locale="nb"
+                      placeholderText="Velg måned"
+                      portalId="datepicker-portal"
+                      popperPlacement="bottom-start"
+                      className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Fylke */}
+              <div>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Fylke</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(showAllRegions ? uniqueRegions : uniqueRegions.slice(0, 8)).map((region) => (
+                    <button
+                      key={region}
+                      onClick={() => handleRegionChange(region)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                        regionFilter.includes(region)
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                  {uniqueRegions.length > 8 && (
+                    <button
+                      onClick={() => setShowAllRegions((v) => !v)}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium text-blue-600 hover:text-blue-800 transition"
+                    >
+                      {showAllRegions ? 'Vis færre' : `+ ${uniqueRegions.length - 8} til`}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Kommende / toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">Kun kommende løp</span>
+                <button
+                  onClick={() => setOnlyUpcoming((prev) => !prev)}
+                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${onlyUpcoming ? 'bg-gray-900' : 'bg-gray-200'}`}
+                >
+                  <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${onlyUpcoming ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
             </div>
           </div>
 
@@ -561,40 +702,73 @@ export default function Home({ races, fetchError }) {
                 onClick={() => setShowMobileFilter(!showMobileFilter)}
                 className={`md:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-full border shadow-sm text-sm font-medium transition ${
                   showMobileFilter || hasActiveFilters
-                    ? 'bg-blue-600 text-white border-blue-600'
+                    ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white border-gray-200 text-gray-700'
                 }`}
               >
                 {showMobileFilter
                   ? <><X size={14} /> Skjul</>
-                  : <><SlidersHorizontal size={14} /> Filter{hasActiveFilters ? ' ●' : ''}</>
+                  : <><SlidersHorizontal size={14} /> Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</>
                 }
               </button>
 
-              {/* View mode toggle */}
-              <div className="inline-flex rounded-full bg-white p-1 border border-gray-200 shadow-sm ml-auto">
-                {[
-                  { id: 'cards', label: 'Kort' },
-                  { id: 'calendar', label: 'Kalender' },
-                  { id: 'map', label: 'Kart' },
-                ].map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setViewMode(id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                      viewMode === id
-                        ? 'bg-blue-600 text-white shadow'
-                        : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              {/* Sort + view mode */}
+              <div className="flex items-center gap-2 ml-auto">
+                <select
+                  value={sortMethod}
+                  onChange={(e) => setSortMethod(e.target.value)}
+                  className="hidden sm:block px-3 py-2 rounded-full bg-white border border-gray-200 shadow-sm text-xs text-gray-600 font-medium focus:outline-none"
+                >
+                  <option value="date">Dato</option>
+                  <option value="distanceAsc">Distanse ↑</option>
+                  <option value="distanceDesc">Distanse ↓</option>
+                </select>
+
+                <div className="inline-flex rounded-full bg-white p-1 border border-gray-200 shadow-sm">
+                  {[
+                    { id: 'cards', label: 'Kort' },
+                    { id: 'calendar', label: 'Kalender' },
+                    { id: 'map', label: 'Kart' },
+                  ].map(({ id, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setViewMode(id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                        viewMode === id
+                          ? 'bg-gray-900 text-white shadow'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Filter result count — only shown when filters are active */}
+            {/* Active filter tags */}
+            {activeFilterTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {activeFilterTags.map((tag) => (
+                  <button
+                    key={tag.label}
+                    onClick={tag.clear}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 transition"
+                  >
+                    {tag.label} <X size={11} />
+                  </button>
+                ))}
+                <button
+                  onClick={nullstillFilter}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium text-gray-500 hover:text-gray-800 border border-gray-300 transition"
+                >
+                  Nullstill alle
+                </button>
+              </div>
+            )}
+
+            {/* Result count */}
             {hasActiveFilters && (
               <p className="text-sm text-gray-500 mb-3">
                 Viser <span className="font-semibold text-gray-900">{activeCount}</span> av {races.length} løp
@@ -678,14 +852,15 @@ export default function Home({ races, fetchError }) {
             {viewMode === 'cards' && (
               <>
                 {racesWithoutFeatured.length === 0 ? (
-                  <div className="text-center py-16 text-gray-500">
-                    <p className="text-3xl mb-3">🔍</p>
-                    <p className="font-medium">Ingen løp funnet</p>
+                  <div className="text-center py-16 text-gray-400">
+                    <p className="text-4xl mb-3">🏃</p>
+                    <p className="font-semibold text-gray-700 text-base mb-1">Ingen løp matchet filteret</p>
+                    <p className="text-sm mb-5">Prøv å justere søket eller fjerne noen filtre</p>
                     <button
                       onClick={nullstillFilter}
-                      className="mt-4 text-sm text-blue-600 underline"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition"
                     >
-                      Nullstill filter
+                      <X size={13} /> Nullstill filter
                     </button>
                   </div>
                 ) : (
@@ -846,7 +1021,7 @@ export default function Home({ races, fetchError }) {
                                 onClick={() => setCurrentPage(p)}
                                 className={`w-9 h-9 rounded-lg text-sm font-medium transition ${
                                   currentPage === p
-                                    ? 'bg-blue-600 text-white shadow'
+                                    ? 'bg-gray-900 text-white shadow'
                                     : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                                 }`}
                               >

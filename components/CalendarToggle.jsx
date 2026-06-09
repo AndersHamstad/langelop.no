@@ -33,7 +33,6 @@ export function CalendarToggle({
           <div className="block md:hidden">
             <MobileCalendarList races={races} />
           </div>
-
           <div className="hidden md:block">
             <MonthCalendar races={races} defaultMonth={defaultMonth} />
           </div>
@@ -45,10 +44,11 @@ export function CalendarToggle({
   );
 }
 
+/* ─── Mobile list ─────────────────────────────────────────────────────────── */
+
 function MobileCalendarList({ races }) {
   const groupedByMonth = useMemo(() => {
     const dayMap = new Map();
-
     for (const race of races || []) {
       const iso = normalizeISO(race.date);
       if (!dayMap.has(iso)) dayMap.set(iso, []);
@@ -65,16 +65,9 @@ function MobileCalendarList({ races }) {
       }));
 
     const monthMap = new Map();
-
     for (const day of days) {
-      if (!monthMap.has(day.monthKey)) {
-        monthMap.set(day.monthKey, {
-          monthKey: day.monthKey,
-          monthLabel: day.monthLabel,
-          days: [],
-        });
-      }
-
+      if (!monthMap.has(day.monthKey))
+        monthMap.set(day.monthKey, { monthKey: day.monthKey, monthLabel: day.monthLabel, days: [] });
       monthMap.get(day.monthKey).days.push(day);
     }
 
@@ -83,7 +76,7 @@ function MobileCalendarList({ races }) {
 
   if (groupedByMonth.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-sm text-gray-600">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-sm text-gray-500 text-center">
         Ingen løp funnet i kalenderen.
       </div>
     );
@@ -92,70 +85,54 @@ function MobileCalendarList({ races }) {
   return (
     <div className="space-y-8">
       {groupedByMonth.map((month) => (
-        <section key={month.monthKey} className="space-y-4">
+        <section key={month.monthKey} className="space-y-3">
           <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-gray-100/95 backdrop-blur">
-            <h2 className="text-lg font-extrabold text-gray-900">
-              {month.monthLabel}
-            </h2>
+            <h2 className="text-lg font-extrabold text-gray-900">{month.monthLabel}</h2>
           </div>
 
           {month.days.map(({ iso, races }) => (
-            <div
-              key={iso}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
-            >
-              <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
-  <p className="text-sm font-semibold text-gray-900">
-  {isoToReadable(iso)}
-  {races.length > 1 && (
-    <span className="text-gray-500 font-medium">
-      {" "}· {races.length} løp
-    </span>
-  )}
-</p>
-</div>
+            <div key={iso} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-4 py-2.5 bg-gradient-to-r from-[#0f1c2e] to-[#1b3a5c] border-b border-white/10">
+                <p className="text-sm font-semibold text-white">
+                  {isoToReadable(iso)}
+                  {races.length > 1 && (
+                    <span className="ml-2 text-xs font-normal text-white/50">{races.length} løp</span>
+                  )}
+                </p>
+              </div>
 
               <div className="divide-y divide-gray-100">
                 {races.map((race) => (
                   <a
                     key={race.id || race.slug}
                     href={race.slug ? `/${race.slug}` : "#"}
-                    className="block px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition"
+                    className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-gray-50 transition"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 leading-snug">
-                          {race.name}
-                        </p>
-
-                        <div className="mt-1 text-xs text-gray-500">
-                          {race.location && <span>📍 {race.location}</span>}
-                          {race.region && <span> · {race.region}</span>}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{race.name}</p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {[race.location, race.region].filter(Boolean).join(" · ")}
+                      </p>
+                      {race.distance && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {(Array.isArray(race.distance) ? race.distance : race.distance.split(","))
+                            .filter(Boolean)
+                            .map((d, i) => (
+                              <span
+                                key={i}
+                                className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                  race.type === "Backyard"
+                                    ? "bg-orange-50 text-orange-700"
+                                    : "bg-blue-50 text-blue-700"
+                                }`}
+                              >
+                                {String(d).trim().replace(/[\[\]{}"']/g, "")}
+                              </span>
+                            ))}
                         </div>
-
-                        {race.distance && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {(Array.isArray(race.distance)
-                              ? race.distance
-                              : race.distance.split(",")
-                            )
-                              .filter(Boolean)
-                              .map((d, i) => (
-                                <span
-                                  key={i}
-                                  className="bg-blue-50 text-blue-800 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                >
-                                  {String(d).trim().replace(/[\[\]{}"']/g, "")}
-                                </span>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <span className="shrink-0 text-gray-300 text-lg leading-none">
-                        →
-                      </span>
+                      )}
                     </div>
+                    <span className="shrink-0 text-gray-300 text-base">→</span>
                   </a>
                 ))}
               </div>
@@ -167,173 +144,211 @@ function MobileCalendarList({ races }) {
   );
 }
 
+/* ─── Desktop calendar ────────────────────────────────────────────────────── */
+
 function MonthCalendar({ races, defaultMonth }) {
   const [cursor, setCursor] = useState(startOfMonth(defaultMonth));
   const month = useMemo(() => buildMonth(cursor), [cursor]);
   const racesByDay = useMemo(() => indexRacesByDay(races), [races]);
   const [activeDay, setActiveDay] = useState(null);
-
   const panelRef = useRef(null);
 
   useEffect(() => {
     if (!activeDay) return;
-
     const onOutside = (e) => {
       if (panelRef.current && panelRef.current.contains(e.target)) return;
       setActiveDay(null);
     };
-
     document.addEventListener("mousedown", onOutside, true);
     document.addEventListener("touchstart", onOutside, true);
-
     return () => {
       document.removeEventListener("mousedown", onOutside, true);
       document.removeEventListener("touchstart", onOutside, true);
     };
   }, [activeDay]);
 
+  const totalRacesThisMonth = useMemo(() => {
+    return month.weeks
+      .flatMap((w) => w.days)
+      .filter((d) => d.inMonth)
+      .reduce((sum, d) => sum + (racesByDay.get(d.iso)?.length || 0), 0);
+  }, [month, racesByDay]);
+
   return (
-    <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-      <div className="flex items-center justify-between px-4 py-3 bg-sky-50 border-b border-sky-200">
-        <div className="flex items-center gap-2">
+    <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#0f1c2e] to-[#1b3a5c]">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setCursor(addMonths(cursor, -1))}
-            className="rounded-xl border px-3 py-1 text-sm hover:bg-white"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition text-base"
           >
             ←
           </button>
           <button
             onClick={() => setCursor(startOfMonth(new Date()))}
-            className="rounded-xl border px-3 py-1 text-sm hover:bg-white"
+            className="px-3 py-1.5 rounded-lg border border-white/20 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition"
           >
             I dag
           </button>
           <button
             onClick={() => setCursor(addMonths(cursor, 1))}
-            className="rounded-xl border px-3 py-1 text-sm hover:bg-white"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition text-base"
           >
             →
           </button>
         </div>
 
-        <div className="text-base font-semibold">
-          {formatMonthHeader(cursor)}
-        </div>
+        <div className="text-base font-bold text-white">{formatMonthHeader(cursor)}</div>
 
-        <div className="text-xs text-gray-500 pr-2">
-          Klikk dato for detaljer
+        <div className="text-xs text-white/50">
+          {totalRacesThisMonth > 0 ? `${totalRacesThisMonth} løp denne måneden` : "Ingen løp"}
         </div>
       </div>
 
-      <div className="grid grid-cols-7 text-center text-xs uppercase tracking-wide bg-white">
-        {"man tir ons tor fre lør søn".split(" ").map((d) => (
-          <div key={d} className="py-2 font-medium text-gray-600 border-b">
+      {/* Weekday labels */}
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-100">
+        {["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"].map((d, i) => (
+          <div
+            key={d}
+            className={`py-2 text-center text-[11px] font-semibold tracking-wide uppercase ${
+              i >= 5 ? "text-slate-400" : "text-slate-500"
+            }`}
+          >
             {d}
           </div>
         ))}
+      </div>
 
+      {/* Grid */}
+      <div className="grid grid-cols-7">
         {month.weeks.map((week, wi) => (
           <React.Fragment key={wi}>
             {week.days.map((day, di) => {
               const iso = day.iso;
               const list = racesByDay.get(iso) || [];
               const isToday = iso === toISODate(new Date());
-
+              const isWeekend = di >= 5;
               const isBottomRow = wi >= month.weeks.length - 2;
               const isRightCol = di >= 5;
-              const horizontalPosClass = isRightCol ? "right-0" : "left-0";
-              const verticalPosPanel = isBottomRow
-                ? "bottom-10 mb-2"
-                : "top-10 mt-2";
 
               return (
                 <div
                   key={iso}
-                  className={
-                    "min-h-[96px] p-2 border -mt-[1px] -ml-[1px] text-left relative " +
-                    (day.inMonth ? "bg-white" : "bg-gray-50")
-                  }
+                  onClick={() => list.length > 0 && setActiveDay(activeDay === iso ? null : iso)}
+                  className={[
+                    "min-h-[100px] p-2 border-b border-r border-gray-100 text-left relative transition-colors",
+                    day.inMonth ? (isWeekend ? "bg-gray-50/60" : "bg-white") : "bg-gray-50/40",
+                    list.length > 0 && day.inMonth ? "cursor-pointer hover:bg-blue-50/40" : "",
+                  ].join(" ")}
                 >
-                  <button
-                    className={
-                      "text-xs font-medium rounded-full px-2 py-1 " +
-                      (isToday
-                        ? "bg-black text-white"
-                        : "hover:bg-gray-100 text-gray-800")
-                    }
-                    onClick={() => setActiveDay(activeDay === iso ? null : iso)}
+                  {/* Date number */}
+                  <div
+                    className={[
+                      "inline-flex w-7 h-7 items-center justify-center rounded-full text-xs font-semibold mb-1.5",
+                      isToday
+                        ? "bg-gray-900 text-white"
+                        : day.inMonth
+                        ? "text-gray-800"
+                        : "text-gray-300",
+                    ].join(" ")}
                   >
                     {day.date}
-                  </button>
+                  </div>
 
-                  <div className="mt-2 flex flex-col gap-1 pr-2">
+                  {/* Race pills */}
+                  <div className="flex flex-col gap-0.5">
                     {list.slice(0, 3).map((r) => (
                       <a
-                        key={r.id}
+                        key={r.id || r.slug}
                         href={r.slug ? `/${r.slug}` : "#"}
-                        className="truncate text-[11px] underline decoration-dotted hover:decoration-solid"
+                        onClick={(e) => e.stopPropagation()}
                         title={r.name}
+                        className={[
+                          "truncate block text-[10px] font-medium px-1.5 py-0.5 rounded transition",
+                          r.type === "Backyard"
+                            ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                            : "bg-blue-50 text-blue-700 hover:bg-blue-100",
+                        ].join(" ")}
                       >
-                        • {r.name}
+                        {r.name}
                       </a>
                     ))}
 
                     {list.length > 3 && (
                       <button
-                        onClick={() => setActiveDay(activeDay === iso ? null : iso)}
-                        className="text-[11px] text-gray-600 text-left underline"
+                        onClick={(e) => { e.stopPropagation(); setActiveDay(activeDay === iso ? null : iso); }}
+                        className="text-[10px] text-gray-400 hover:text-gray-600 text-left font-medium pl-0.5 transition"
                       >
                         +{list.length - 3} flere
                       </button>
                     )}
                   </div>
 
+                  {/* Day detail popup */}
                   {activeDay === iso && (
                     <div
-                      className={
-                        "absolute z-30 " +
-                        horizontalPosClass +
-                        " " +
-                        verticalPosPanel
-                      }
+                      className={[
+                        "absolute z-30",
+                        isRightCol ? "right-0" : "left-0",
+                        isBottomRow ? "bottom-full mb-1" : "top-full mt-1",
+                      ].join(" ")}
                     >
                       <div
                         ref={panelRef}
-                        className="w-80 max-h-64 overflow-y-auto rounded-xl border bg-white shadow-xl p-3"
+                        className="w-72 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-semibold">
-                            {isoToReadable(iso)}
-                          </div>
+                        <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border-b border-gray-100">
+                          <span className="text-xs font-semibold text-gray-700">{isoToReadable(iso)}</span>
                           <button
-                            onClick={() => setActiveDay(null)}
-                            className="text-xs px-2 py-1 rounded-md border hover:bg-gray-50"
+                            onClick={(e) => { e.stopPropagation(); setActiveDay(null); }}
+                            className="text-gray-400 hover:text-gray-600 transition text-base leading-none"
                           >
-                            Lukk
+                            ×
                           </button>
                         </div>
 
-                        {list.length === 0 ? (
-                          <div className="text-xs text-gray-500">
-                            Ingen løp denne dagen
-                          </div>
-                        ) : (
-                          <ul className="space-y-2 pr-1">
-                            {list.map((r) => (
-                              <li key={r.id} className="text-sm">
-                                <a
-                                  href={r.slug ? `/${r.slug}` : "#"}
-                                  className="font-medium underline decoration-dotted hover:decoration-solid"
-                                >
-                                  {r.name}
-                                </a>
-                                <div className="text-xs text-gray-600">
-                                  {r.location || r.region || ""}
+                        <ul className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                          {list.map((r) => (
+                            <li key={r.id || r.slug}>
+                              <a
+                                href={r.slug ? `/${r.slug}` : "#"}
+                                className="flex items-start gap-3 px-3 py-3 hover:bg-gray-50 transition"
+                              >
+                                <span
+                                  className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                                    r.type === "Backyard" ? "bg-orange-400" : "bg-blue-400"
+                                  }`}
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 leading-snug">{r.name}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    {[r.location, r.region].filter(Boolean).join(" · ")}
+                                  </p>
+                                  {r.distance && (
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                      {(Array.isArray(r.distance) ? r.distance : r.distance.split(","))
+                                        .filter(Boolean)
+                                        .map((d, i) => (
+                                          <span
+                                            key={i}
+                                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                              r.type === "Backyard"
+                                                ? "bg-orange-50 text-orange-700"
+                                                : "bg-blue-50 text-blue-700"
+                                            }`}
+                                          >
+                                            {String(d).trim().replace(/[\[\]{}"']/g, "")}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  )}
                                 </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                                <span className="ml-auto text-gray-300 text-sm flex-shrink-0">→</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   )}
@@ -347,7 +362,7 @@ function MonthCalendar({ races, defaultMonth }) {
   );
 }
 
-/* -------- Utils -------- */
+/* ─── Utils ───────────────────────────────────────────────────────────────── */
 
 function startOfMonth(d) {
   const x = new Date(d);
@@ -372,41 +387,24 @@ function getMondayIndexOfFirstDay(y, m) {
 }
 
 function toISODate(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function isoToReadable(iso) {
   const [y, m, d] = iso.split("-").map((v) => parseInt(v, 10));
   const date = new Date(y, m - 1, d);
-
-  return date.toLocaleDateString("no-NO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const s = date.toLocaleDateString("no-NO", { weekday: "short", day: "2-digit", month: "long", year: "numeric" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function formatMonthLabel(iso) {
   const [y, m] = iso.split("-").map((v) => parseInt(v, 10));
-  const date = new Date(y, m - 1, 1);
-
-  const s = date.toLocaleDateString("no-NO", {
-    month: "long",
-    year: "numeric",
-  });
-
+  const s = new Date(y, m - 1, 1).toLocaleDateString("no-NO", { month: "long", year: "numeric" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function formatMonthHeader(d) {
-  const s = d
-    .toLocaleDateString("no-NO", { month: "long", year: "numeric" })
-    .trim();
-
+  const s = d.toLocaleDateString("no-NO", { month: "long", year: "numeric" }).trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
@@ -415,78 +413,48 @@ function buildMonth(cursor) {
   const m = cursor.getMonth();
   const total = daysInMonth(y, m);
   const leading = getMondayIndexOfFirstDay(y, m);
-
   const cells = [];
 
   for (let i = 0; i < leading; i++) {
     const date = new Date(y, m, -i);
-    cells.unshift({
-      iso: toISODate(date),
-      date: date.getDate(),
-      inMonth: false,
-    });
+    cells.unshift({ iso: toISODate(date), date: date.getDate(), inMonth: false });
   }
-
   for (let d = 1; d <= total; d++) {
     const date = new Date(y, m, d);
-    cells.push({
-      iso: toISODate(date),
-      date: d,
-      inMonth: true,
-    });
+    cells.push({ iso: toISODate(date), date: d, inMonth: true });
   }
-
   while (cells.length % 7 !== 0) {
     const last = cells[cells.length - 1];
     const [yy, mm, dd] = last.iso.split("-").map((v) => parseInt(v, 10));
     const nxt = new Date(yy, mm - 1, dd + 1);
-
-    cells.push({
-      iso: toISODate(nxt),
-      date: nxt.getDate(),
-      inMonth: false,
-    });
+    cells.push({ iso: toISODate(nxt), date: nxt.getDate(), inMonth: false });
   }
-
   while (cells.length < 42) {
     const last = cells[cells.length - 1];
     const [yy, mm, dd] = last.iso.split("-").map((v) => parseInt(v, 10));
     const nxt = new Date(yy, mm - 1, dd + 1);
-
-    cells.push({
-      iso: toISODate(nxt),
-      date: nxt.getDate(),
-      inMonth: false,
-    });
+    cells.push({ iso: toISODate(nxt), date: nxt.getDate(), inMonth: false });
   }
 
   const weeks = [];
-
-  for (let i = 0; i < cells.length; i += 7) {
-    weeks.push({ days: cells.slice(i, i + 7) });
-  }
-
+  for (let i = 0; i < cells.length; i += 7) weeks.push({ days: cells.slice(i, i + 7) });
   return { year: y, month: m + 1, weeks };
 }
 
 function indexRacesByDay(races) {
   const map = new Map();
-
   for (const r of races || []) {
     const iso = normalizeISO(r.date);
     if (!map.has(iso)) map.set(iso, []);
     map.get(iso).push(r);
   }
-
   for (const [k, list] of map.entries()) {
     list.sort((a, b) => a.name.localeCompare(b.name));
     map.set(k, list);
   }
-
   return map;
 }
 
 function normalizeISO(value) {
-  const d = new Date(value);
-  return toISODate(d);
+  return toISODate(new Date(value));
 }

@@ -5,27 +5,64 @@
 html {
   scroll-behavior: smooth;
 }
+/* ── Map cluster ──────────────────────────────────────────────────────────── */
 .langelop-cluster-wrapper {
   background: transparent;
   border: none;
 }
 
 .langelop-cluster-pin {
-  width: 44px;
-  height: 44px;
-  background: #2563eb;
+  width: 36px;
+  height: 36px;
+  background: #1d4ed8;
   color: white;
-  border: 3px solid white;
-  border-radius: 9999px 9999px 9999px 0;
-  transform: rotate(-45deg);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  border: 2.5px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 12px rgba(29, 78, 216, 0.40);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .langelop-cluster-pin span {
-  transform: rotate(45deg);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
 }
+
+/* ── Map single markers ───────────────────────────────────────────────────── */
+.race-marker-wrapper {
+  background: transparent;
+  border: none;
+}
+
+.race-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+  transition: transform 0.15s;
+}
+
+.race-marker-dot:hover {
+  transform: scale(1.4);
+}
+
+.race-marker-dot--ultra    { background: #2563eb; }
+.race-marker-dot--backyard { background: #ea580c; }
+
+/* ── Leaflet popup reset ──────────────────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  border-radius: 14px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.leaflet-popup-tip-container { display: none; }
