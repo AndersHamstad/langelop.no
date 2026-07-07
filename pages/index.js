@@ -904,7 +904,7 @@ export default function Home({ races, fetchError }) {
                                 alt={`${race.name}`}
                                 className={`w-full h-28 object-cover transition-all duration-300 ${
                                   isSoldOut
-                                    ? 'grayscale opacity-60'
+                                    ? ''
                                     : 'opacity-75 group-hover:opacity-100 group-hover:scale-105'
                                 }`}
                               />
