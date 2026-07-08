@@ -2,6 +2,16 @@
 
 export const articles = [
 {
+  slug: 'ernaring-under-ultraløp',
+  title: 'Ernæring i ultraløp – løpekonkurranse eller spisekonkurranse?',
+  date: '2026-07-08',
+  author: 'Oliver Nilsen',
+  excerpt: 'Kroppen din trenger mye energi for å klare å utføre oppgavene du har lagt ned så mange treningstimer for. Her er alt du trenger å vite om ernæring under ultra.',
+  image: 'https://aqigjepaomgykibkiklz.supabase.co/storage/v1/object/public/article-images/merve-sehirli-nasir-XqgZH6QS3oA-unsplash.jpg',
+  focusList: 'center 50%',
+},
+
+{
   slug: 'hva-bør-du-ha-med',
   title: 'Hva bør du ha med deg på ultraløp? (50K vs 100K)',
   date: '2026-05-11',
