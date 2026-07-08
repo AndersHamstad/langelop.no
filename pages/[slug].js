@@ -318,7 +318,7 @@ function KeyFactsCard({ race, onShare, onCalendar, shareLabel, ctaRef }) {
         <a ref={ctaRef} href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
           target="_blank" rel="noreferrer"
           className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition">
-          Meld deg på
+          Besøk nettside
           <ExternalLink size={14} />
         </a>
       )}
@@ -691,7 +691,7 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
           <a href={race.url.startsWith('http') ? race.url : `https://${race.url}`}
             target="_blank" rel="noreferrer"
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-900 text-white text-sm font-semibold rounded-xl">
-            Meld deg på <ExternalLink size={14} />
+            Besøk nettside <ExternalLink size={14} />
           </a>
           <button onClick={handleShare}
             className="px-4 py-3 border border-gray-200 rounded-xl text-gray-600">

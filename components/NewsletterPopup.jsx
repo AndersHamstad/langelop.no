@@ -13,7 +13,7 @@ export default function NewsletterPopup() {
   useEffect(() => {
     const isDev = process.env.NODE_ENV === 'development';
     if (!isDev) {
-      const dismissed = localStorage.getItem('newsletterPopupDismissed') === 'true';
+      const dismissed = localStorage.getItem('newsletterPopupDismissed_v2') === 'true';
       if (dismissed) {
         setHasDismissed(true);
         setSubscribed(true);
@@ -55,7 +55,7 @@ export default function NewsletterPopup() {
     if (!res.ok) {
       setError(json.error || 'Noe gikk galt. Prøv igjen.');
     } else {
-      localStorage.setItem('newsletterPopupDismissed', 'true');
+      localStorage.setItem('newsletterPopupDismissed_v2', 'true');
       setDone(true);
       setTimeout(() => {
         setSubscribed(true);
@@ -65,7 +65,7 @@ export default function NewsletterPopup() {
   };
 
   const handleClose = () => {
-    localStorage.setItem('newsletterPopupDismissed', 'true');
+    localStorage.setItem('newsletterPopupDismissed_v2', 'true');
     setHasDismissed(true);
     setVisible(false);
   };
