@@ -180,7 +180,7 @@ export default function Home({ races, fetchError }) {
 
         const matchesDistance = (() => {
           const nums = [].concat(race.distance_numeric || []);
-          if (nums.length === 0) return false;
+          if (nums.length === 0) return true;
           return nums.some((num) =>
             distanceRange[1] === maxSliderValue
               ? num >= distanceRange[0]
@@ -237,7 +237,7 @@ export default function Home({ races, fetchError }) {
         const matchesSearch = race.name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDistance = (() => {
           const nums = [].concat(race.distance_numeric || []);
-          if (!nums.length) return false;
+          if (!nums.length) return true;
           return nums.some((num) =>
             distanceRange[1] === maxSliderValue
               ? num >= distanceRange[0]
