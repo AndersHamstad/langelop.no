@@ -30,7 +30,7 @@ function Stars({ value, onChange }) {
 function SokkReviews() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ navn: "", email: "", rating: 0, kommentar: "" });
+  const [form, setForm] = useState({ navn: "", email: "", rating: 0, kommentar: "", image: null });
   const [status, setStatus] = useState(null);
   const [sending, setSending] = useState(false);
 
@@ -53,6 +53,22 @@ function SokkReviews() {
     setSending(true);
     setStatus(null);
 
+    let image_url = null;
+    if (form.image) {
+      const ext = form.image.name.split(".").pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("review-images")
+        .upload(path, form.image, { contentType: form.image.type });
+      if (uploadError) {
+        setSending(false);
+        setStatus("Kunne ikke laste opp bildet. Prøv igjen.");
+        return;
+      }
+      const { data } = supabase.storage.from("review-images").getPublicUrl(path);
+      image_url = data.publicUrl;
+    }
+
     const res = await fetch("/api/produkt-review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,6 +78,7 @@ function SokkReviews() {
         email: form.email,
         rating: form.rating,
         kommentar: form.kommentar,
+        image_url,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -71,7 +88,7 @@ function SokkReviews() {
       setStatus(json.error || "Noe gikk galt. Prøv igjen.");
     } else {
       setStatus("success");
-      setForm({ navn: "", email: "", rating: 0, kommentar: "" });
+      setForm({ navn: "", email: "", rating: 0, kommentar: "", image: null });
     }
   }
 
@@ -104,6 +121,13 @@ function SokkReviews() {
                 <Stars value={r.rating} />
               </div>
               {r.kommentar && <p className="text-sm text-gray-600 leading-relaxed">{r.kommentar}</p>}
+              {r.image_url && (
+                <img
+                  src={r.image_url}
+                  alt="Anmeldelse"
+                  className="mt-3 rounded-xl max-h-48 object-cover"
+                />
+              )}
             </div>
           ))}
         </div>
@@ -146,6 +170,20 @@ function SokkReviews() {
               value={form.kommentar}
               onChange={(e) => setForm(f => ({ ...f, kommentar: e.target.value }))}
             />
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Legg til bilde (valgfritt)</p>
+              <label className="flex items-center gap-2 cursor-pointer w-fit">
+                <span className="border border-gray-200 rounded-xl px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 transition text-gray-700">
+                  {form.image ? form.image.name : "Velg bilde"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setForm(f => ({ ...f, image: e.target.files?.[0] || null }))}
+                />
+              </label>
+            </div>
             {status && status !== "success" && (
               <p className="text-sm text-red-500">{status}</p>
             )}

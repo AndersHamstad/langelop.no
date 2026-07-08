@@ -42,7 +42,7 @@ async function sendReviewNotification({ produkt_id, navn, email, rating, komment
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { produkt_id, navn, email, rating, kommentar } = req.body;
+  const { produkt_id, navn, email, rating, kommentar, image_url } = req.body;
 
   if (!produkt_id || !navn || !email || !rating) {
     return res.status(400).json({ error: 'Alle felt er påkrevd.' });
@@ -57,6 +57,7 @@ export default async function handler(req, res) {
     email,
     rating,
     kommentar: kommentar || null,
+    image_url: image_url || null,
     approved: false,
   }]);
 
