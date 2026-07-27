@@ -217,6 +217,168 @@ function RaceEditor({ race, adminPw, onSaved }) {
   );
 }
 
+function getPricing(qty) {
+  if (qty <= 0) return { price: 0, shipping: 0 };
+  if (qty === 1) return { price: 249, shipping: 69 };
+  if (qty === 2) return { price: 449, shipping: 69 };
+  return { price: 649 + (qty - 3) * 200, shipping: 0 };
+}
+
+function getTotal(qty) {
+  const { price, shipping } = getPricing(qty);
+  return price + shipping;
+}
+
+const ORDER_STATUSES = [
+  { value: "pending_payment", label: "Venter Vipps", color: "bg-yellow-50 text-yellow-700" },
+  { value: "paid", label: "Betalt", color: "bg-blue-50 text-blue-700" },
+  { value: "shipped", label: "Sendt", color: "bg-green-50 text-green-700" },
+  { value: "cancelled", label: "Avbrutt", color: "bg-red-50 text-red-600" },
+];
+
+function StatusBadge({ status }) {
+  const s = ORDER_STATUSES.find((o) => o.value === status) || ORDER_STATUSES[0];
+  return (
+    <span className={`inline-block text-xs font-medium rounded-full px-2.5 py-1 ${s.color}`}>
+      {s.label}
+    </span>
+  );
+}
+
+function ShopTab({ adminPw }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/admin/orders", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => { setOrders(Array.isArray(data) ? data : []); setLoading(false); });
+  }, [adminPw]);
+
+  async function updateStatus(id, status) {
+    await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, status }),
+    });
+    setOrders((os) => os.map((o) => o.id === id ? { ...o, status } : o));
+  }
+
+  function formatDate(str) {
+    if (!str) return "–";
+    return new Date(str).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+  const totalRevenue = orders.reduce((s, o) => s + getTotal(o.quantity), 0);
+  const revenueThisMonth = orders
+    .filter((o) => new Date(o.created_at) >= thirtyDaysAgo)
+    .reduce((s, o) => s + getTotal(o.quantity), 0);
+  const ordersThisMonth = orders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
+  const avgOrder = orders.length ? Math.round(totalRevenue / orders.length) : 0;
+
+  const filtered = orders.filter((o) => filterStatus === "all" || o.status === filterStatus);
+
+  return (
+    <div className="max-w-3xl">
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Sokkebestillinger</h2>
+
+      {/* Økonomi-kort */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {[
+          { label: "Total inntekt", value: `${totalRevenue.toLocaleString("nb-NO")} kr` },
+          { label: "Siste 30 dager", value: `${revenueThisMonth.toLocaleString("nb-NO")} kr` },
+          { label: "Bestillinger (30d)", value: ordersThisMonth },
+          { label: "Snitt per ordre", value: `${avgOrder.toLocaleString("nb-NO")} kr` },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <button
+          onClick={() => setFilterStatus("all")}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterStatus === "all" ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+        >
+          Alle ({orders.length})
+        </button>
+        {ORDER_STATUSES.map((s) => {
+          const count = orders.filter((o) => o.status === s.value).length;
+          return (
+            <button
+              key={s.value}
+              onClick={() => setFilterStatus(s.value)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterStatus === s.value ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+            >
+              {s.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {loading && <p className="text-sm text-gray-400">Laster bestillinger…</p>}
+      {!loading && filtered.length === 0 && <p className="text-sm text-gray-400">Ingen bestillinger.</p>}
+
+      <div className="space-y-2">
+        {filtered.map((o) => {
+          const total = getTotal(o.quantity);
+          const isOpen = expanded === o.id;
+          return (
+            <div key={o.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <button
+                className="w-full text-left px-5 py-4 flex items-center gap-4"
+                onClick={() => setExpanded(isOpen ? null : o.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 text-sm">{o.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {o.quantity} par · str. {o.size} · {total} kr · {formatDate(o.created_at)}
+                  </p>
+                </div>
+                <StatusBadge status={o.status} />
+                <span className="text-gray-400 text-xs">{isOpen ? "▲" : "▼"}</span>
+              </button>
+
+              {isOpen && (
+                <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <div><span className="text-gray-400">E-post</span><br /><a href={`mailto:${o.email}`} className="text-blue-600 hover:underline">{o.email}</a></div>
+                    <div><span className="text-gray-400">Størrelse</span><br />{o.size}</div>
+                    <div><span className="text-gray-400">Adresse</span><br />{o.address}, {o.postal_code} {o.city}</div>
+                    <div><span className="text-gray-400">Total</span><br className="font-medium text-gray-900" />{total} kr</div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2">Oppdater status</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {ORDER_STATUSES.map((s) => (
+                        <button
+                          key={s.value}
+                          onClick={() => updateStatus(o.id, s.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${o.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const SORT_OPTIONS = [
   { value: "date-asc", label: "Dato (tidligst først)" },
   { value: "date-desc", label: "Dato (senest først)" },
@@ -431,19 +593,19 @@ export default function AdminPage() {
           <div className="p-4 border-b border-gray-100 space-y-2">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Admin</p>
             <div className="flex rounded-xl overflow-hidden border border-gray-200">
-              <button
-                onClick={() => setTab("races")}
-                className={`flex-1 py-2 text-sm font-medium transition ${tab === "races" ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-              >
-                Løp
-              </button>
-              <button
-                onClick={() => setTab("newsletters")}
-                className={`flex-1 py-2 text-sm font-medium transition ${tab === "newsletters" ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-              >
-                Nyhetsbrev
-              </button>
-            </div>
+              {[
+                { value: "races", label: "Løp" },
+                { value: "newsletters", label: "Brev" },
+                { value: "shop", label: "Shop" },
+              ].map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setTab(t.value)}
+                  className={`flex-1 py-2 text-sm font-medium transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                >
+                  {t.label}
+                </button>
+              ))}</div>
           </div>
 
           {tab === "races" && (
@@ -507,6 +669,7 @@ export default function AdminPage() {
         {/* Hovedinnhold */}
         <div className="flex-1 p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
+          {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
               <div className="mb-6">
