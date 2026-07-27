@@ -59,8 +59,8 @@ export default function MyApp({ Component, pageProps }) {
 
       {/* ✅ Sticky footer layout */}
       <div className="min-h-screen flex flex-col">
-        {/* ✅ Header på alle sider unntatt forsiden */}
-        {pathname !== '/' && <Header />}
+        {/* ✅ Header på alle sider unntatt forsiden og admin */}
+        {pathname !== '/' && pathname !== '/admin' && <Header />}
 
         {/* Hovedinnhold tar ledig plass */}
         <main className="flex-1 flex flex-col">
