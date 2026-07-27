@@ -72,8 +72,8 @@ export default function MyApp({ Component, pageProps }) {
         <Footer />
       </div>
 
-      {/* Nyhetsbrev-popup kun på forsiden */}
-      {pathname === '/' && <NewsletterPopup />}
+      {/* Nyhetsbrev-popup på alle sider unntatt admin */}
+      {pathname !== '/admin' && <NewsletterPopup />}
 
       {/* Vercel Analytics */}
       <Analytics />
