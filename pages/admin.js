@@ -525,6 +525,7 @@ function Missing({ label }) {
 
 function NewsletterTab({ adminPw }) {
   const [campaigns, setCampaigns] = useState([]);
+  const [subscribers, setSubscribers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeStatus, setActiveStatus] = useState("sent");
 
@@ -534,6 +535,12 @@ function NewsletterTab({ adminPw }) {
     { value: "ready", label: "Klar" },
     { value: "outbox", label: "Planlagt" },
   ];
+
+  useEffect(() => {
+    fetch("/api/admin/subscribers", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setSubscribers(Array.isArray(data) ? data : []));
+  }, [adminPw]);
 
   useEffect(() => {
     setLoading(true);
@@ -557,6 +564,10 @@ function NewsletterTab({ adminPw }) {
     return `${Math.round((n / total) * 100)} %`;
   }
 
+  const now = new Date();
+  const ago = (days) => new Date(now - days * 24 * 60 * 60 * 1000);
+  const since = (days) => subscribers.filter((s) => new Date(s.created_at) >= ago(days)).length;
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
@@ -570,6 +581,41 @@ function NewsletterTab({ adminPw }) {
           Åpne MailerLite →
         </a>
       </div>
+
+      {/* Abonnenter */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {[
+          { label: "Totalt", value: subscribers.length },
+          { label: "Siste 7 dager", value: since(7) },
+          { label: "Siste 30 dager", value: since(30) },
+          { label: "Siste 90 dager", value: since(90) },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Siste påmeldte */}
+      {subscribers.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
+          <p className="text-sm font-semibold text-gray-700 mb-3">Siste påmeldte</p>
+          <div className="space-y-2">
+            {subscribers.slice(0, 10).map((s) => (
+              <div key={s.email} className="flex items-center justify-between text-sm">
+                <span className="text-gray-700">{s.email}</span>
+                <span className="text-xs text-gray-400">
+                  {new Date(s.created_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              </div>
+            ))}
+          </div>
+          {subscribers.length > 10 && (
+            <p className="text-xs text-gray-400 mt-3">{subscribers.length - 10} til ikke vist</p>
+          )}
+        </div>
+      )}
 
       {/* Status-tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
