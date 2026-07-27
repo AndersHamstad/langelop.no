@@ -276,12 +276,25 @@ function ShopTab({ adminPw }) {
 
   const orderTotal = (o) => o.total_price ?? getTotal(o.quantity);
 
-  const totalRevenue = orders.reduce((s, o) => s + orderTotal(o), 0);
-  const revenueThisMonth = orders
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+  const totalRevenue = activeOrders.reduce((s, o) => s + orderTotal(o), 0);
+  const revenueThisMonth = activeOrders
     .filter((o) => new Date(o.created_at) >= thirtyDaysAgo)
     .reduce((s, o) => s + orderTotal(o), 0);
-  const ordersThisMonth = orders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
-  const avgOrder = orders.length ? Math.round(totalRevenue / orders.length) : 0;
+  const ordersThisMonth = activeOrders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
+  const avgOrder = activeOrders.length ? Math.round(totalRevenue / activeOrders.length) : 0;
+
+  const INITIAL_STOCK = { S: 30, M: 50, L: 20 };
+  const soldBySzie = activeOrders.reduce((acc, o) => {
+    acc[o.size] = (acc[o.size] || 0) + o.quantity;
+    return acc;
+  }, {});
+  const stock = Object.fromEntries(
+    Object.entries(INITIAL_STOCK).map(([size, initial]) => [
+      size,
+      { initial, sold: soldBySzie[size] || 0, remaining: initial - (soldBySzie[size] || 0) },
+    ])
+  );
 
   const filtered = orders.filter((o) => filterStatus === "all" || o.status === filterStatus);
 
@@ -302,6 +315,29 @@ function ShopTab({ adminPw }) {
             <p className="text-xs text-gray-400 mt-1">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Lager */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
+        <p className="text-sm font-semibold text-gray-700 mb-3">Lagerbeholdning</p>
+        <div className="grid grid-cols-3 gap-3">
+          {Object.entries(stock).map(([size, { initial, sold, remaining }]) => (
+            <div key={size} className="text-center">
+              <p className="text-xs text-gray-400 mb-1">Størrelse {size}</p>
+              <p className={`text-2xl font-bold ${remaining <= 3 ? "text-red-500" : remaining <= 8 ? "text-orange-500" : "text-gray-900"}`}>
+                {remaining}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">igjen av {initial}</p>
+              <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${remaining <= 3 ? "bg-red-400" : remaining <= 8 ? "bg-orange-400" : "bg-green-400"}`}
+                  style={{ width: `${Math.round((remaining / initial) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">{sold} solgt</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Filter */}
