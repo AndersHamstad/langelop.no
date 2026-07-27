@@ -247,15 +247,44 @@ function StatusBadge({ status }) {
 
 function ShopTab({ adminPw }) {
   const [orders, setOrders] = useState([]);
+  const [adjustments, setAdjustments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [expanded, setExpanded] = useState(null);
+  const [adjSize, setAdjSize] = useState("S");
+  const [adjQty, setAdjQty] = useState("");
+  const [adjNote, setAdjNote] = useState("");
+  const [adjSaving, setAdjSaving] = useState(false);
+
+  function loadAdjustments() {
+    return fetch("/api/admin/stock-adjustments", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setAdjustments(Array.isArray(data) ? data : []));
+  }
 
   useEffect(() => {
-    fetch("/api/admin/orders", { headers: { "x-admin-password": adminPw } })
-      .then((r) => r.json())
-      .then((data) => { setOrders(Array.isArray(data) ? data : []); setLoading(false); });
+    Promise.all([
+      fetch("/api/admin/orders", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setOrders(Array.isArray(data) ? data : [])),
+      loadAdjustments(),
+    ]).then(() => setLoading(false));
   }, [adminPw]);
+
+  async function addAdjustment(e) {
+    e.preventDefault();
+    if (!adjQty || parseInt(adjQty) <= 0) return;
+    setAdjSaving(true);
+    await fetch("/api/admin/stock-adjustments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ size: adjSize, quantity: parseInt(adjQty), note: adjNote }),
+    });
+    await loadAdjustments();
+    setAdjQty("");
+    setAdjNote("");
+    setAdjSaving(false);
+  }
 
   async function updateStatus(id, status) {
     await fetch("/api/admin/orders", {
@@ -285,15 +314,20 @@ function ShopTab({ adminPw }) {
   const avgOrder = activeOrders.length ? Math.round(totalRevenue / activeOrders.length) : 0;
 
   const INITIAL_STOCK = { S: 30, M: 50, L: 20 };
-  const soldBySzie = activeOrders.reduce((acc, o) => {
+  const soldBySize = activeOrders.reduce((acc, o) => {
     acc[o.size] = (acc[o.size] || 0) + o.quantity;
     return acc;
   }, {});
+  const adjustedBySize = adjustments.reduce((acc, a) => {
+    acc[a.size] = (acc[a.size] || 0) + Math.abs(a.quantity);
+    return acc;
+  }, {});
   const stock = Object.fromEntries(
-    Object.entries(INITIAL_STOCK).map(([size, initial]) => [
-      size,
-      { initial, sold: soldBySzie[size] || 0, remaining: initial - (soldBySzie[size] || 0) },
-    ])
+    Object.entries(INITIAL_STOCK).map(([size, initial]) => {
+      const sold = soldBySize[size] || 0;
+      const adj = adjustedBySize[size] || 0;
+      return [size, { initial, sold, adjusted: adj, remaining: initial - sold - adj }];
+    })
   );
 
   const filtered = orders.filter((o) => filterStatus === "all" || o.status === filterStatus);
@@ -319,9 +353,9 @@ function ShopTab({ adminPw }) {
 
       {/* Lager */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
-        <p className="text-sm font-semibold text-gray-700 mb-3">Lagerbeholdning</p>
-        <div className="grid grid-cols-3 gap-3">
-          {Object.entries(stock).map(([size, { initial, sold, remaining }]) => (
+        <p className="text-sm font-semibold text-gray-700 mb-4">Lagerbeholdning</p>
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {Object.entries(stock).map(([size, { initial, sold, adjusted, remaining }]) => (
             <div key={size} className="text-center">
               <p className="text-xs text-gray-400 mb-1">Størrelse {size}</p>
               <p className={`text-2xl font-bold ${remaining <= 3 ? "text-red-500" : remaining <= 8 ? "text-orange-500" : "text-gray-900"}`}>
@@ -331,12 +365,49 @@ function ShopTab({ adminPw }) {
               <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${remaining <= 3 ? "bg-red-400" : remaining <= 8 ? "bg-orange-400" : "bg-green-400"}`}
-                  style={{ width: `${Math.round((remaining / initial) * 100)}%` }}
+                  style={{ width: `${Math.max(0, Math.round((remaining / initial) * 100))}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1">{sold} solgt</p>
+              <p className="text-xs text-gray-400 mt-1">{sold} solgt{adjusted > 0 ? `, ${adjusted} annet` : ""}</p>
             </div>
           ))}
+        </div>
+
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs font-medium text-gray-500 mb-2">Registrer uttak</p>
+          <form onSubmit={addAdjustment} className="flex gap-2 flex-wrap items-end">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Størrelse</label>
+              <select value={adjSize} onChange={(e) => setAdjSize(e.target.value)}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900">
+                {["S","M","L"].map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Antall</label>
+              <input type="number" min="1" value={adjQty} onChange={(e) => setAdjQty(e.target.value)}
+                placeholder="0" className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <div className="flex-1 min-w-32">
+              <label className="text-xs text-gray-400 block mb-1">Grunn (valgfritt)</label>
+              <input type="text" value={adjNote} onChange={(e) => setAdjNote(e.target.value)}
+                placeholder="Egen bruk, gave…" className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <button type="submit" disabled={adjSaving || !adjQty}
+              className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50">
+              {adjSaving ? "…" : "Legg til"}
+            </button>
+          </form>
+
+          {adjustments.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {adjustments.map((a) => (
+                <p key={a.id} className="text-xs text-gray-400">
+                  − {Math.abs(a.quantity)} {a.size}{a.note ? ` · ${a.note}` : ""} <span className="text-gray-300">· {new Date(a.created_at).toLocaleDateString("nb-NO")}</span>
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
