@@ -111,6 +111,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Alle felter må fylles ut." });
     }
 
+    const { price: p, shipping: s } = getPricing(quantity);
     const { error } = await supabase.from("sock_orders").insert([
       {
         name,
@@ -121,6 +122,7 @@ export default async function handler(req, res) {
         postal_code: postalCode,
         city,
         status: "pending_payment",
+        total_price: p + s,
       },
     ]);
 

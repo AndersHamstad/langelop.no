@@ -274,10 +274,12 @@ function ShopTab({ adminPw }) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-  const totalRevenue = orders.reduce((s, o) => s + getTotal(o.quantity), 0);
+  const orderTotal = (o) => o.total_price ?? getTotal(o.quantity);
+
+  const totalRevenue = orders.reduce((s, o) => s + orderTotal(o), 0);
   const revenueThisMonth = orders
     .filter((o) => new Date(o.created_at) >= thirtyDaysAgo)
-    .reduce((s, o) => s + getTotal(o.quantity), 0);
+    .reduce((s, o) => s + orderTotal(o), 0);
   const ordersThisMonth = orders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
   const avgOrder = orders.length ? Math.round(totalRevenue / orders.length) : 0;
 
@@ -329,7 +331,7 @@ function ShopTab({ adminPw }) {
 
       <div className="space-y-2">
         {filtered.map((o) => {
-          const total = getTotal(o.quantity);
+          const total = orderTotal(o);
           const isOpen = expanded === o.id;
           return (
             <div key={o.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -350,10 +352,11 @@ function ShopTab({ adminPw }) {
               {isOpen && (
                 <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                    <div><span className="text-gray-400">E-post</span><br /><a href={`mailto:${o.email}`} className="text-blue-600 hover:underline">{o.email}</a></div>
+                    <div><span className="text-gray-400">E-post</span><br />{o.email ? <a href={`mailto:${o.email}`} className="text-blue-600 hover:underline">{o.email}</a> : <span className="text-gray-400">–</span>}</div>
                     <div><span className="text-gray-400">Størrelse</span><br />{o.size}</div>
-                    <div><span className="text-gray-400">Adresse</span><br />{o.address}, {o.postal_code} {o.city}</div>
-                    <div><span className="text-gray-400">Total</span><br className="font-medium text-gray-900" />{total} kr</div>
+                    <div><span className="text-gray-400">Adresse</span><br />{o.address ? `${o.address}, ${o.postal_code} ${o.city}` : <span className="text-gray-400">–</span>}</div>
+                    <div><span className="text-gray-400">Total</span><br /><span className="font-medium text-gray-900">{total} kr</span></div>
+                    {o.notes && <div className="col-span-2"><span className="text-gray-400">Notat</span><br />{o.notes}</div>}
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 mb-2">Oppdater status</p>
