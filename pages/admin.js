@@ -1,6 +1,161 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 
+const DEV_LOG = [
+  {
+    date: "2026-07-27",
+    title: "Admin-panel",
+    items: [
+      "Bygget /admin med passordbeskyttelse (ADMIN_PASSWORD env var)",
+      "Løp-fane: søk, sortering (dato/navn), filtrering (mangler bilde/info/URL/status), mangler-badges",
+      "Redigering av løp: navn, dato, sted, region, URL, status, beskrivelse, bildeopplasting",
+      "Nyhetsbrev-fane: MailerLite-integrasjon med sendte/utkast/planlagte kampanjer og statistikk",
+      "Nyhetsbrev-fane: abonnentstatistikk fra Supabase (totalt, siste 7/30/90 dager, siste påmeldte)",
+      "Shop-fane: bestillingsoversikt med bekreftet/ventende inntekt, lagerbeholdning per størrelse, manuelle lageruttak",
+      "Dev-fane (denne siden)",
+    ],
+  },
+  {
+    date: "2026-07-27",
+    title: "Nyhetsbrev-popup",
+    items: [
+      "Popup vises nå på alle sider (ikke bare forsiden) — unntatt /admin",
+      "Tidligere: kun pathname === '/' i _app.js",
+    ],
+  },
+  {
+    date: "2026-07-27",
+    title: "Sokkebestillinger",
+    items: [
+      "Historiske bestillinger importert til sock_orders-tabellen i Supabase",
+      "Lagt til total_price og notes kolonne i sock_orders",
+      "Nye bestillinger lagrer nå total_price automatisk",
+      "stock_adjustments-tabell opprettet for manuelle lageruttak",
+    ],
+  },
+  {
+    date: "2026-07-08",
+    title: "Artikkel: Ernæring under ultraløp",
+    items: [
+      "Ny MDX-artikkel av Oliver Nilsen",
+      "JSON-LD Article schema lagt til på alle artikkelsider",
+      "FAQ-seksjon og interne lenker for SEO",
+    ],
+  },
+  {
+    date: "2026-07-08",
+    title: "Diverse",
+    items: [
+      "CTA på løpssider endret fra 'Meld deg på' til 'Besøk nettside'",
+      "Nyhetsbrev-popup nullstilt til v2 (alle brukere fikk den opp igjen én gang)",
+      "Løp uten distance_numeric vises nå i filteret på forsiden",
+      "Bildeopplasting for produktanmeldelser",
+    ],
+  },
+];
+
+const TODO = [
+  {
+    priority: "high",
+    title: "Webhuset e-post",
+    description: "Sett opp Gmail 'Send as' for post@langelop.no når Webhuset-tilgang er gjenopprettet. Oppdater order-sock.js 'from'-felt.",
+  },
+  {
+    priority: "high",
+    title: "SQL-fiks: splittede sokkebestillinger",
+    description: "Kjør UPDATE for å sette total_price = 0 på sekundære rader (Jon S, Kristian Grongstad S, Håkon Alsaker S, Kai Vaag S) slik at totalsum stemmer.",
+    sql: `UPDATE sock_orders SET total_price = 0
+WHERE created_at::date = '2025-01-01'
+AND size = 'S'
+AND name IN ('Jon', 'Kristian Grongstad', 'Håkon Alsaker', 'Kai Vaag')
+AND total_price IS NULL;`,
+  },
+  {
+    priority: "medium",
+    title: "Sync newsletter-subscribers til MailerLite",
+    description: "Abonnenter fra popup lagres i Supabase men sendes ikke til MailerLite automatisk. Bør bygges en API-rute eller cron som synker.",
+  },
+  {
+    priority: "medium",
+    title: "GPX-fil støtte",
+    description: "gpx_url-kolonnen finnes ikke i races-tabellen ennå. Kjør ALTER TABLE races ADD COLUMN gpx_url text; og aktiver feltet i admin-panelet.",
+  },
+  {
+    priority: "low",
+    title: "Legg til løp fra admin",
+    description: "Admin-panelet støtter kun redigering, ikke opprettelse av nye løp. Nye løp legges til via SQL i Supabase.",
+  },
+];
+
+function DevTab() {
+  const [expandedSql, setExpandedSql] = useState(null);
+
+  const priorityStyle = {
+    high: "bg-red-50 text-red-600 border-red-200",
+    medium: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    low: "bg-gray-50 text-gray-500 border-gray-200",
+  };
+  const priorityLabel = { high: "Høy", medium: "Medium", low: "Lav" };
+
+  return (
+    <div className="max-w-3xl space-y-10">
+      {/* TODO */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Åpne oppgaver</h2>
+        <div className="space-y-3">
+          {TODO.map((t, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-start gap-3">
+                <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${priorityStyle[t.priority]}`}>
+                  {priorityLabel[t.priority]}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm">{t.title}</p>
+                  <p className="text-sm text-gray-500 mt-1">{t.description}</p>
+                  {t.sql && (
+                    <button
+                      onClick={() => setExpandedSql(expandedSql === i ? null : i)}
+                      className="text-xs text-blue-600 hover:underline mt-2"
+                    >
+                      {expandedSql === i ? "Skjul SQL ▲" : "Vis SQL ▼"}
+                    </button>
+                  )}
+                  {t.sql && expandedSql === i && (
+                    <pre className="mt-2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap">{t.sql}</pre>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Endringslogg */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Endringslogg</h2>
+        <div className="space-y-4">
+          {DEV_LOG.map((entry, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <p className="font-semibold text-gray-900">{entry.title}</p>
+                <span className="text-xs text-gray-400">{entry.date}</span>
+              </div>
+              <ul className="space-y-1.5">
+                {entry.items.map((item, j) => (
+                  <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
+                    <span className="text-gray-300 mt-0.5">–</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_OPTIONS = [
   { value: "", label: "Ingen" },
   { value: "Utsolgt", label: "Utsolgt" },
@@ -765,6 +920,7 @@ export default function AdminPage() {
                 { value: "races", label: "Løp" },
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
+                { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
                   key={t.value}
@@ -838,6 +994,7 @@ export default function AdminPage() {
         <div className="flex-1 p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
+          {tab === "dev" && <DevTab />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
               <div className="mb-6">
