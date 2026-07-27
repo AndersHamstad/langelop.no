@@ -306,12 +306,16 @@ function ShopTab({ adminPw }) {
   const orderTotal = (o) => o.total_price ?? getTotal(o.quantity);
 
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
-  const totalRevenue = activeOrders.reduce((s, o) => s + orderTotal(o), 0);
-  const revenueThisMonth = activeOrders
+  const confirmedOrders = activeOrders.filter((o) => o.status === "paid" || o.status === "shipped");
+  const pendingOrders = activeOrders.filter((o) => o.status === "pending_payment");
+
+  const totalRevenue = confirmedOrders.reduce((s, o) => s + orderTotal(o), 0);
+  const pendingRevenue = pendingOrders.reduce((s, o) => s + orderTotal(o), 0);
+  const revenueThisMonth = confirmedOrders
     .filter((o) => new Date(o.created_at) >= thirtyDaysAgo)
     .reduce((s, o) => s + orderTotal(o), 0);
-  const ordersThisMonth = activeOrders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
-  const avgOrder = activeOrders.length ? Math.round(totalRevenue / activeOrders.length) : 0;
+  const ordersThisMonth = confirmedOrders.filter((o) => new Date(o.created_at) >= thirtyDaysAgo).length;
+  const avgOrder = confirmedOrders.length ? Math.round(totalRevenue / confirmedOrders.length) : 0;
 
   const INITIAL_STOCK = { S: 30, M: 50, L: 20 };
   const soldBySize = activeOrders.reduce((acc, o) => {
@@ -339,16 +343,24 @@ function ShopTab({ adminPw }) {
       {/* Økonomi-kort */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "Total inntekt", value: `${totalRevenue.toLocaleString("nb-NO")} kr` },
-          { label: "Siste 30 dager", value: `${revenueThisMonth.toLocaleString("nb-NO")} kr` },
+          { label: "Bekreftet inntekt", value: `${totalRevenue.toLocaleString("nb-NO")} kr`, sub: "betalt + sendt" },
+          { label: "Siste 30 dager", value: `${revenueThisMonth.toLocaleString("nb-NO")} kr`, sub: "bekreftet" },
           { label: "Bestillinger (30d)", value: ordersThisMonth },
           { label: "Snitt per ordre", value: `${avgOrder.toLocaleString("nb-NO")} kr` },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-4">
             <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+            {s.sub && <p className="text-xs text-gray-300 mt-0.5">{s.sub}</p>}
           </div>
         ))}
+        {pendingRevenue > 0 && (
+          <div className="bg-yellow-50 rounded-2xl border border-yellow-200 p-4">
+            <p className="text-2xl font-bold text-yellow-700">{pendingRevenue.toLocaleString("nb-NO")} kr</p>
+            <p className="text-xs text-yellow-600 mt-0.5">Ventende inntekt</p>
+            <p className="text-xs text-yellow-400 mt-0.5">{pendingOrders.length} ordre venter Vipps</p>
+          </div>
+        )}
       </div>
 
       {/* Lager */}
