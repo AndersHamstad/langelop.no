@@ -239,8 +239,137 @@ function Missing({ label }) {
   );
 }
 
+function NewsletterTab({ adminPw }) {
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("sent");
+
+  const STATUS_TABS = [
+    { value: "sent", label: "Sendt" },
+    { value: "draft", label: "Utkast" },
+    { value: "ready", label: "Klar" },
+    { value: "outbox", label: "Planlagt" },
+  ];
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/admin/newsletters?status=${activeStatus}`, {
+      headers: { "x-admin-password": adminPw },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setCampaigns(data?.data || []);
+        setLoading(false);
+      });
+  }, [adminPw, activeStatus]);
+
+  function formatDate(str) {
+    if (!str) return "–";
+    return new Date(str).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function pct(n, total) {
+    if (!total) return "–";
+    return `${Math.round((n / total) * 100)} %`;
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Nyhetsbrev</h2>
+        <a
+          href="https://app.mailerlite.com/campaigns"
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-blue-600 hover:underline"
+        >
+          Åpne MailerLite →
+        </a>
+      </div>
+
+      {/* Status-tabs */}
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
+        {STATUS_TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setActiveStatus(t.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              activeStatus === t.value
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="text-sm text-gray-400">Laster kampanjer…</p>}
+
+      {!loading && campaigns.length === 0 && (
+        <p className="text-sm text-gray-400">Ingen kampanjer her.</p>
+      )}
+
+      <div className="space-y-3">
+        {campaigns.map((c) => {
+          const stats = c.stats || {};
+          const sent = stats.sent || 0;
+          const opens = stats.opens_count || 0;
+          const clicks = stats.clicks_count || 0;
+
+          return (
+            <div key={c.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 leading-snug">{c.name}</p>
+                  {c.emails?.[0]?.subject && (
+                    <p className="text-sm text-gray-500 mt-0.5">{c.emails[0].subject}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {activeStatus === "sent"
+                      ? `Sendt ${formatDate(c.sent_at || c.scheduled_for)}`
+                      : activeStatus === "outbox"
+                      ? `Planlagt ${formatDate(c.scheduled_for)}`
+                      : `Opprettet ${formatDate(c.created_at)}`}
+                  </p>
+                </div>
+                <a
+                  href={`https://app.mailerlite.com/campaigns/${c.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Åpne
+                </a>
+              </div>
+
+              {activeStatus === "sent" && sent > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{sent.toLocaleString("nb-NO")}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Mottakere</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{pct(opens, sent)}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Åpnet</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{pct(clicks, sent)}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Klikket</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [adminPw, setAdminPw] = useState(null);
+  const [tab, setTab] = useState("races");
   const [races, setRaces] = useState([]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("date-asc");
@@ -300,7 +429,25 @@ export default function AdminPage() {
         {/* Sidebar */}
         <div className="w-80 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
           <div className="p-4 border-b border-gray-100 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Admin</p>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200">
+              <button
+                onClick={() => setTab("races")}
+                className={`flex-1 py-2 text-sm font-medium transition ${tab === "races" ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+              >
+                Løp
+              </button>
+              <button
+                onClick={() => setTab("newsletters")}
+                className={`flex-1 py-2 text-sm font-medium transition ${tab === "newsletters" ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+              >
+                Nyhetsbrev
+              </button>
+            </div>
+          </div>
+
+          {tab === "races" && (
+          <div className="p-4 border-b border-gray-100 space-y-2">
             <input
               type="text"
               placeholder="Søk på løp, sted eller fylke…"
@@ -324,9 +471,11 @@ export default function AdminPage() {
             </select>
             <p className="text-xs text-gray-400">{filtered.length} løp</p>
           </div>
+          )}
+
           <div className="overflow-y-auto flex-1">
-            {loading && <p className="text-xs text-gray-400 p-4">Laster løp…</p>}
-            {filtered.map((race) => (
+              {tab === "races" && loading && <p className="text-xs text-gray-400 p-4">Laster løp…</p>}
+            {tab === "races" && filtered.map((race) => (
               <button
                 key={race.slug}
                 onClick={() => setSelected(race)}
@@ -355,9 +504,10 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Editor */}
+        {/* Hovedinnhold */}
         <div className="flex-1 p-8 overflow-y-auto">
-          {selected ? (
+          {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
+          {tab === "races" && selected && (
             <div className="max-w-2xl">
               <div className="mb-6">
                 <a href={`/${selected.slug}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
@@ -378,7 +528,8 @@ export default function AdminPage() {
                 />
               </div>
             </div>
-          ) : (
+          )}
+          {tab === "races" && !selected && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <p className="text-sm">Velg et løp fra listen til venstre</p>
             </div>
