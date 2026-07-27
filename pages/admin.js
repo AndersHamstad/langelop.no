@@ -217,10 +217,34 @@ function RaceEditor({ race, adminPw, onSaved }) {
   );
 }
 
+const SORT_OPTIONS = [
+  { value: "date-asc", label: "Dato (tidligst først)" },
+  { value: "date-desc", label: "Dato (senest først)" },
+  { value: "name-asc", label: "Navn (A–Å)" },
+];
+
+const FILTER_OPTIONS = [
+  { value: "all", label: "Alle" },
+  { value: "no-image", label: "Mangler bilde" },
+  { value: "no-description", label: "Mangler info" },
+  { value: "no-url", label: "Mangler URL" },
+  { value: "has-status", label: "Har status" },
+];
+
+function Missing({ label }) {
+  return (
+    <span className="inline-block text-[10px] font-medium bg-red-50 text-red-500 rounded px-1.5 py-0.5 mr-1">
+      {label}
+    </span>
+  );
+}
+
 export default function AdminPage() {
   const [adminPw, setAdminPw] = useState(null);
   const [races, setRaces] = useState([]);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("date-asc");
+  const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -244,11 +268,26 @@ export default function AdminPage() {
     setAdminPw(pw);
   }
 
-  const filtered = races.filter((r) =>
-    r.name?.toLowerCase().includes(search.toLowerCase()) ||
-    r.location?.toLowerCase().includes(search.toLowerCase()) ||
-    r.region?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = races
+    .filter((r) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        r.name?.toLowerCase().includes(q) ||
+        r.location?.toLowerCase().includes(q) ||
+        r.region?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      if (filter === "no-image") return !r.image_url;
+      if (filter === "no-description") return !r.description;
+      if (filter === "no-url") return !r.url;
+      if (filter === "has-status") return !!r.status_note;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === "date-asc") return (a.date || "").localeCompare(b.date || "");
+      if (sort === "date-desc") return (b.date || "").localeCompare(a.date || "");
+      if (sort === "name-asc") return (a.name || "").localeCompare(b.name || "", "nb");
+      return 0;
+    });
 
   if (!adminPw) return <PasswordGate onAuth={handleAuth} />;
 
@@ -260,8 +299,8 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-100 flex">
         {/* Sidebar */}
         <div className="w-80 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
-          <div className="p-4 border-b border-gray-100">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Admin</p>
+          <div className="p-4 border-b border-gray-100 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin</p>
             <input
               type="text"
               placeholder="Søk på løp, sted eller fylke…"
@@ -269,6 +308,21 @@ export default function AdminPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-gray-50"
             />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              {FILTER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <p className="text-xs text-gray-400">{filtered.length} løp</p>
           </div>
           <div className="overflow-y-auto flex-1">
             {loading && <p className="text-xs text-gray-400 p-4">Laster løp…</p>}
@@ -283,6 +337,11 @@ export default function AdminPage() {
                   {race.date} · {race.location}
                   {race.status_note && <span className="ml-1 text-orange-500">· {race.status_note}</span>}
                 </p>
+                <div className="mt-1">
+                  {!race.image_url && <Missing label="bilde" />}
+                  {!race.description && <Missing label="info" />}
+                  {!race.url && <Missing label="URL" />}
+                </div>
               </button>
             ))}
           </div>
