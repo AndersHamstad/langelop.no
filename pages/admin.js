@@ -54,80 +54,224 @@ const DEV_LOG = [
   },
 ];
 
-const TODO = [
-  {
-    priority: "high",
-    title: "Webhuset e-post",
-    description: "Sett opp Gmail 'Send as' for post@langelop.no når Webhuset-tilgang er gjenopprettet. Oppdater order-sock.js 'from'-felt.",
-  },
-  {
-    priority: "high",
-    title: "SQL-fiks: splittede sokkebestillinger",
-    description: "Kjør UPDATE for å sette total_price = 0 på sekundære rader (Jon S, Kristian Grongstad S, Håkon Alsaker S, Kai Vaag S) slik at totalsum stemmer.",
-    sql: `UPDATE sock_orders SET total_price = 0
-WHERE created_at::date = '2025-01-01'
-AND size = 'S'
-AND name IN ('Jon', 'Kristian Grongstad', 'Håkon Alsaker', 'Kai Vaag')
-AND total_price IS NULL;`,
-  },
-  {
-    priority: "medium",
-    title: "Sync newsletter-subscribers til MailerLite",
-    description: "Abonnenter fra popup lagres i Supabase men sendes ikke til MailerLite automatisk. Bør bygges en API-rute eller cron som synker.",
-  },
-  {
-    priority: "medium",
-    title: "GPX-fil støtte",
-    description: "gpx_url-kolonnen finnes ikke i races-tabellen ennå. Kjør ALTER TABLE races ADD COLUMN gpx_url text; og aktiver feltet i admin-panelet.",
-  },
-  {
-    priority: "low",
-    title: "Legg til løp fra admin",
-    description: "Admin-panelet støtter kun redigering, ikke opprettelse av nye løp. Nye løp legges til via SQL i Supabase.",
-  },
-];
 
-function DevTab() {
-  const [expandedSql, setExpandedSql] = useState(null);
+const PRIORITY_STYLE = {
+  high: "bg-red-50 text-red-600 border-red-200",
+  medium: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  low: "bg-gray-50 text-gray-500 border-gray-200",
+};
+const PRIORITY_LABEL = { high: "Høy", medium: "Medium", low: "Lav" };
 
-  const priorityStyle = {
-    high: "bg-red-50 text-red-600 border-red-200",
-    medium: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    low: "bg-gray-50 text-gray-500 border-gray-200",
-  };
-  const priorityLabel = { high: "Høy", medium: "Medium", low: "Lav" };
+function DevTab({ adminPw }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newPriority, setNewPriority] = useState("medium");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  function loadTasks() {
+    return fetch("/api/admin/dev-tasks", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setTasks(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadTasks().then(() => setLoading(false));
+  }, [adminPw]);
+
+  async function addTask(e) {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/dev-tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ title: newTitle.trim(), description: newDesc.trim(), priority: newPriority }),
+    });
+    const task = await res.json();
+    setTasks((ts) => [task, ...ts]);
+    setNewTitle("");
+    setNewDesc("");
+    setNewPriority("medium");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function toggleComplete(task) {
+    const updated = { id: task.id, completed: !task.completed };
+    const res = await fetch("/api/admin/dev-tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify(updated),
+    });
+    const data = await res.json();
+    setTasks((ts) => ts.map((t) => t.id === task.id ? data : t));
+  }
+
+  async function deleteTask(id) {
+    if (!confirm("Slett oppgaven?")) return;
+    await fetch("/api/admin/dev-tasks", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setTasks((ts) => ts.filter((t) => t.id !== id));
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/dev-tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setTasks((ts) => ts.map((t) => t.id === id ? data : t));
+    setEditingId(null);
+  }
+
+  const open = tasks.filter((t) => !t.completed);
+  const done = tasks.filter((t) => t.completed);
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  function TaskCard({ t }) {
+    const isEditing = editingId === t.id;
+    return (
+      <div className={`bg-white rounded-2xl border border-gray-200 p-5 ${t.completed ? "opacity-60" : ""}`}>
+        {isEditing ? (
+          <div className="space-y-3">
+            <input
+              value={editForm.title ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+              className={inputCls}
+              placeholder="Tittel"
+              autoFocus
+            />
+            <textarea
+              value={editForm.description ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+              className={inputCls}
+              rows={3}
+              placeholder="Beskrivelse (valgfritt)"
+            />
+            <div className="flex gap-2 items-center">
+              <select
+                value={editForm.priority ?? "medium"}
+                onChange={(e) => setEditForm((f) => ({ ...f, priority: e.target.value }))}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                {["high", "medium", "low"].map((p) => (
+                  <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
+                ))}
+              </select>
+              <button onClick={() => saveEdit(t.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition">Lagre</button>
+              <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700">Avbryt</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-3">
+            <button
+              onClick={() => toggleComplete(t)}
+              className={`shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${t.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300 hover:border-gray-500"}`}
+              title={t.completed ? "Marker som åpen" : "Marker som fullført"}
+            >
+              {t.completed && <span className="text-[10px] font-bold">✓</span>}
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${PRIORITY_STYLE[t.priority]}`}>
+                  {PRIORITY_LABEL[t.priority]}
+                </span>
+                <p className={`font-semibold text-sm ${t.completed ? "line-through text-gray-400" : "text-gray-900"}`}>{t.title}</p>
+              </div>
+              {t.description && <p className="text-sm text-gray-500 mt-1">{t.description}</p>}
+            </div>
+            <div className="shrink-0 flex gap-1">
+              <button
+                onClick={() => { setEditingId(t.id); setEditForm({ title: t.title, description: t.description || "", priority: t.priority }); }}
+                className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+              >Rediger</button>
+              <button
+                onClick={() => deleteTask(t.id)}
+                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+              >Slett</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl space-y-10">
       {/* TODO */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Åpne oppgaver</h2>
-        <div className="space-y-3">
-          {TODO.map((t, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
-              <div className="flex items-start gap-3">
-                <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${priorityStyle[t.priority]}`}>
-                  {priorityLabel[t.priority]}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm">{t.title}</p>
-                  <p className="text-sm text-gray-500 mt-1">{t.description}</p>
-                  {t.sql && (
-                    <button
-                      onClick={() => setExpandedSql(expandedSql === i ? null : i)}
-                      className="text-xs text-blue-600 hover:underline mt-2"
-                    >
-                      {expandedSql === i ? "Skjul SQL ▲" : "Vis SQL ▼"}
-                    </button>
-                  )}
-                  {t.sql && expandedSql === i && (
-                    <pre className="mt-2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap">{t.sql}</pre>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Åpne oppgaver</h2>
+          <button
+            onClick={() => setShowAdd((v) => !v)}
+            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+          >
+            {showAdd ? "Avbryt" : "+ Ny oppgave"}
+          </button>
         </div>
+
+        {showAdd && (
+          <form onSubmit={addTask} className="bg-white rounded-2xl border border-gray-200 p-5 mb-4 space-y-3">
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className={inputCls}
+              placeholder="Tittel *"
+              autoFocus
+            />
+            <textarea
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              className={inputCls}
+              rows={3}
+              placeholder="Beskrivelse (valgfritt)"
+            />
+            <div className="flex gap-2 items-center">
+              <select
+                value={newPriority}
+                onChange={(e) => setNewPriority(e.target.value)}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                {["high", "medium", "low"].map((p) => (
+                  <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                disabled={saving || !newTitle.trim()}
+                className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+              >
+                {saving ? "Lagrer…" : "Legg til"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {loading && <p className="text-sm text-gray-400">Laster oppgaver…</p>}
+        {!loading && open.length === 0 && <p className="text-sm text-gray-400">Ingen åpne oppgaver.</p>}
+
+        <div className="space-y-3">
+          {open.map((t) => <TaskCard key={t.id} t={t} />)}
+        </div>
+
+        {done.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Fullførte</p>
+            <div className="space-y-2">
+              {done.map((t) => <TaskCard key={t.id} t={t} />)}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Endringslogg */}
@@ -994,7 +1138,7 @@ export default function AdminPage() {
         <div className="flex-1 p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
-          {tab === "dev" && <DevTab />}
+          {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
               <div className="mb-6">
