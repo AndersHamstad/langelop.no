@@ -7,6 +7,9 @@ const DEV_LOG = [
     title: "Konsepter-fane og mobilvennlig admin",
     items: [
       "Konsepter-fane: kort for sokkekonsepter med status (idé/prøver/dialog/besluttet), leverandør, kontakt og notater",
+      "Bildeopplasting på konsepter (samme opplastingsknapp som løpsbilder)",
+      "Oppfølgingspåminnelse på konsepter — rød badge når fristen er i dag/passert",
+      "Egen leverandørliste (navn, kontakt, notater) i Konsepter-fanen",
       "Adminpanelet er nå mobilvennlig — sidebar blir en skjul/vis-meny på små skjermer",
       "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
     ],
@@ -317,6 +320,161 @@ const CONCEPT_STATUS = [
 ];
 const CONCEPT_STATUS_MAP = Object.fromEntries(CONCEPT_STATUS.map((s) => [s.value, s]));
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function FollowUpBadge({ date }) {
+  if (!date) return null;
+  const today = todayStr();
+  const overdue = date < today;
+  const dueToday = date === today;
+  const label = new Date(date).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+  const style = overdue || dueToday
+    ? "bg-red-50 text-red-600 border-red-200"
+    : "bg-gray-50 text-gray-500 border-gray-200";
+  return (
+    <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${style}`}>
+      {overdue ? "Følg opp! (var " : dueToday ? "Følg opp i dag" : "Følg opp "}{!dueToday && label}{overdue && ")"}
+    </span>
+  );
+}
+
+function SupplierSection({ adminPw }) {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  useEffect(() => {
+    fetch("/api/admin/suppliers", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setSuppliers(Array.isArray(data) ? data : []))
+      .then(() => setLoading(false));
+  }, [adminPw]);
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  async function addSupplier(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/suppliers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ name: newName.trim(), contact: newContact.trim(), notes: newNotes.trim() }),
+    });
+    const supplier = await res.json();
+    setSuppliers((ss) => [...ss, supplier].sort((a, b) => a.name.localeCompare(b.name, "nb")));
+    setNewName("");
+    setNewContact("");
+    setNewNotes("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/suppliers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setSuppliers((ss) => ss.map((s) => s.id === id ? data : s));
+    setEditingId(null);
+  }
+
+  async function deleteSupplier(id) {
+    if (!confirm("Slette leverandøren?")) return;
+    await fetch("/api/admin/suppliers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setSuppliers((ss) => ss.filter((s) => s.id !== id));
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 mb-6 overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-4"
+      >
+        <p className="text-sm font-semibold text-gray-900">Leverandører {!loading && `(${suppliers.length})`}</p>
+        <span className="text-gray-400 text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="text-xs font-medium bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700 transition"
+            >
+              {showAdd ? "Avbryt" : "+ Ny leverandør"}
+            </button>
+          </div>
+
+          {showAdd && (
+            <form onSubmit={addSupplier} className="bg-gray-50 rounded-xl p-4 mb-3 space-y-2">
+              <input value={newName} onChange={(e) => setNewName(e.target.value)} className={inputCls} placeholder="Navn *" autoFocus />
+              <input value={newContact} onChange={(e) => setNewContact(e.target.value)} className={inputCls} placeholder="Kontakt (e-post/telefon)" />
+              <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} className={inputCls} rows={2} placeholder="Notater" />
+              <button type="submit" disabled={saving || !newName.trim()} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50">
+                {saving ? "Lagrer…" : "Legg til"}
+              </button>
+            </form>
+          )}
+
+          {loading && <p className="text-sm text-gray-400">Laster…</p>}
+          {!loading && suppliers.length === 0 && <p className="text-sm text-gray-400">Ingen leverandører lagt til ennå.</p>}
+
+          <div className="space-y-2">
+            {suppliers.map((s) => {
+              const isEditing = editingId === s.id;
+              return (
+                <div key={s.id} className="border border-gray-100 rounded-xl p-3">
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <input value={editForm.name ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className={inputCls} placeholder="Navn" autoFocus />
+                      <input value={editForm.contact ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))} className={inputCls} placeholder="Kontakt" />
+                      <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} className={inputCls} rows={2} placeholder="Notater" />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(s.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition">Lagre</button>
+                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700">Avbryt</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{s.name}</p>
+                        {s.contact && <p className="text-xs text-gray-500 mt-0.5">{s.contact}</p>}
+                        {s.notes && <p className="text-xs text-gray-500 mt-1">{s.notes}</p>}
+                      </div>
+                      <div className="shrink-0 flex gap-1">
+                        <button
+                          onClick={() => { setEditingId(s.id); setEditForm({ name: s.name, contact: s.contact || "", notes: s.notes || "" }); }}
+                          className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                        >Rediger</button>
+                        <button onClick={() => deleteSupplier(s.id)} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition">Slett</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConceptsTab({ adminPw }) {
   const [concepts, setConcepts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -325,9 +483,15 @@ function ConceptsTab({ adminPw }) {
   const [newSupplier, setNewSupplier] = useState("");
   const [newContact, setNewContact] = useState("");
   const [newNotes, setNewNotes] = useState("");
+  const [newFollowUp, setNewFollowUp] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploadingNew, setUploadingNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [uploadingEdit, setUploadingEdit] = useState(false);
+  const newImageRef = useRef();
+  const editImageRef = useRef();
 
   function loadConcepts() {
     return fetch("/api/admin/concepts", { headers: { "x-admin-password": adminPw } })
@@ -339,6 +503,47 @@ function ConceptsTab({ adminPw }) {
     loadConcepts().then(() => setLoading(false));
   }, [adminPw]);
 
+  async function uploadImage(file) {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("bucket", "concept-images");
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: { "x-admin-password": adminPw },
+      body: data,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    return json.url;
+  }
+
+  async function handleNewImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingNew(true);
+    try {
+      setNewImageUrl(await uploadImage(file));
+    } catch (err) {
+      alert("Opplasting feilet: " + err.message);
+    } finally {
+      setUploadingNew(false);
+    }
+  }
+
+  async function handleEditImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingEdit(true);
+    try {
+      const url = await uploadImage(file);
+      setEditForm((f) => ({ ...f, image_url: url }));
+    } catch (err) {
+      alert("Opplasting feilet: " + err.message);
+    } finally {
+      setUploadingEdit(false);
+    }
+  }
+
   async function addConcept(e) {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -346,7 +551,14 @@ function ConceptsTab({ adminPw }) {
     const res = await fetch("/api/admin/concepts", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
-      body: JSON.stringify({ name: newName.trim(), supplier: newSupplier.trim(), contact: newContact.trim(), notes: newNotes.trim() }),
+      body: JSON.stringify({
+        name: newName.trim(),
+        supplier: newSupplier.trim(),
+        contact: newContact.trim(),
+        notes: newNotes.trim(),
+        image_url: newImageUrl,
+        follow_up_date: newFollowUp || null,
+      }),
     });
     const concept = await res.json();
     setConcepts((cs) => [concept, ...cs]);
@@ -354,6 +566,8 @@ function ConceptsTab({ adminPw }) {
     setNewSupplier("");
     setNewContact("");
     setNewNotes("");
+    setNewFollowUp("");
+    setNewImageUrl("");
     setShowAdd(false);
     setSaving(false);
   }
@@ -426,6 +640,31 @@ function ConceptsTab({ adminPw }) {
               rows={4}
               placeholder="Notater / logg fra dialog"
             />
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Følg opp innen</label>
+              <input
+                type="date"
+                value={editForm.follow_up_date ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, follow_up_date: e.target.value }))}
+                className={`${inputCls} w-auto`}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
+                <input value={editForm.image_url ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, image_url: e.target.value }))} className={`${inputCls} flex-1`} placeholder="https://..." />
+                <button
+                  type="button"
+                  onClick={() => editImageRef.current?.click()}
+                  disabled={uploadingEdit}
+                  className="shrink-0 border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-60"
+                >
+                  {uploadingEdit ? "Laster opp…" : "Last opp"}
+                </button>
+                <input ref={editImageRef} type="file" accept="image/*" className="hidden" onChange={handleEditImage} />
+              </div>
+              {editForm.image_url && <img src={editForm.image_url} alt="" className="mt-2 h-24 rounded-xl object-cover" />}
+            </div>
             <div className="flex gap-2 items-center flex-wrap">
               <select
                 value={editForm.status ?? c.status}
@@ -443,11 +682,15 @@ function ConceptsTab({ adminPw }) {
         ) : (
           <div>
             <div className="flex items-start justify-between gap-3">
+              {c.image_url && (
+                <img src={c.image_url} alt="" className="shrink-0 w-16 h-16 rounded-xl object-cover" />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${status.style}`}>
                     {status.label}
                   </span>
+                  <FollowUpBadge date={c.follow_up_date} />
                   <p className="font-semibold text-sm text-gray-900">{c.name}</p>
                 </div>
                 {(c.supplier || c.contact) && (
@@ -461,7 +704,7 @@ function ConceptsTab({ adminPw }) {
               </div>
               <div className="shrink-0 flex gap-1">
                 <button
-                  onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, supplier: c.supplier || "", contact: c.contact || "", notes: c.notes || "", status: c.status }); }}
+                  onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, supplier: c.supplier || "", contact: c.contact || "", notes: c.notes || "", status: c.status, image_url: c.image_url || "", follow_up_date: c.follow_up_date || "" }); }}
                   className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
                 >Rediger</button>
                 <button
@@ -489,6 +732,8 @@ function ConceptsTab({ adminPw }) {
 
   return (
     <div className="max-w-3xl">
+      <SupplierSection adminPw={adminPw} />
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Sokkekonsepter</h2>
         <button
@@ -529,6 +774,31 @@ function ConceptsTab({ adminPw }) {
             rows={3}
             placeholder="Notater / status på dialogen"
           />
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Følg opp innen</label>
+            <input
+              type="date"
+              value={newFollowUp}
+              onChange={(e) => setNewFollowUp(e.target.value)}
+              className={`${inputCls} w-auto`}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
+              <input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className={`${inputCls} flex-1`} placeholder="https://..." />
+              <button
+                type="button"
+                onClick={() => newImageRef.current?.click()}
+                disabled={uploadingNew}
+                className="shrink-0 border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-60"
+              >
+                {uploadingNew ? "Laster opp…" : "Last opp"}
+              </button>
+              <input ref={newImageRef} type="file" accept="image/*" className="hidden" onChange={handleNewImage} />
+            </div>
+            {newImageUrl && <img src={newImageUrl} alt="" className="mt-2 h-24 rounded-xl object-cover" />}
+          </div>
           <button
             type="submit"
             disabled={saving || !newName.trim()}

@@ -12,19 +12,19 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     const { data, error } = await supabase
-      .from("sock_concepts")
+      .from("sock_suppliers")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("name", { ascending: true });
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   }
 
   if (req.method === "POST") {
-    const { name, status, supplier, contact, notes, image_url, follow_up_date } = req.body;
+    const { name, contact, notes } = req.body;
     if (!name) return res.status(400).json({ error: "Navn påkrevd" });
     const { data, error } = await supabase
-      .from("sock_concepts")
-      .insert([{ name, status: status || "idea", supplier, contact, notes, image_url, follow_up_date: follow_up_date || null }])
+      .from("sock_suppliers")
+      .insert([{ name, contact, notes }])
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -34,11 +34,10 @@ export default async function handler(req, res) {
   if (req.method === "PATCH") {
     const { id, ...fields } = req.body;
     if (!id) return res.status(400).json({ error: "id påkrevd" });
-    if ("follow_up_date" in fields && fields.follow_up_date === "") fields.follow_up_date = null;
-    const allowed = ["name", "status", "supplier", "contact", "notes", "image_url", "follow_up_date"];
+    const allowed = ["name", "contact", "notes"];
     const update = Object.fromEntries(Object.entries(fields).filter(([k]) => allowed.includes(k)));
     const { data, error } = await supabase
-      .from("sock_concepts")
+      .from("sock_suppliers")
       .update(update)
       .eq("id", id)
       .select()
@@ -50,7 +49,7 @@ export default async function handler(req, res) {
   if (req.method === "DELETE") {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: "id påkrevd" });
-    const { error } = await supabase.from("sock_concepts").delete().eq("id", id);
+    const { error } = await supabase.from("sock_suppliers").delete().eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ ok: true });
   }
