@@ -443,7 +443,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Navn</label>
           <input value={form.name} onChange={set("name")} className={inputCls} />
@@ -454,7 +454,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Sted</label>
           <input value={form.location} onChange={set("location")} className={inputCls} />
@@ -465,7 +465,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Nettside (URL)</label>
           <input value={form.url} onChange={set("url")} className={inputCls} placeholder="https://..." />
@@ -488,7 +488,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
       {/* Bilde */}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
-        <div className="flex gap-2 items-start">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
           <input value={form.image_url} onChange={set("image_url")} className={`${inputCls} flex-1`} placeholder="https://..." />
           <button
             type="button"
@@ -1005,6 +1005,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("adminPw");
@@ -1054,11 +1055,48 @@ export default function AdminPage() {
       <Head>
         <title>Admin – Langeløp.no</title>
       </Head>
+      {/* Mobile top bar */}
+      <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 -ml-2 text-gray-600"
+          aria-label="Åpne meny"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <p className="text-sm font-semibold text-gray-900">Admin – Langeløp.no</p>
+        <div className="w-6" />
+      </div>
+
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       <div className="min-h-screen bg-gray-100 flex">
         {/* Sidebar */}
-        <div className="w-80 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+        <div
+          className={`fixed md:static inset-y-0 left-0 z-40 w-80 max-w-[85vw] shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen md:sticky md:top-0 transform transition-transform duration-200 md:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
           <div className="p-4 border-b border-gray-100 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Admin</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin</p>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="md:hidden p-1 text-gray-400 hover:text-gray-600"
+                aria-label="Lukk meny"
+              >
+                ✕
+              </button>
+            </div>
             <div className="flex rounded-xl overflow-hidden border border-gray-200">
               {[
                 { value: "races", label: "Løp" },
@@ -1068,7 +1106,7 @@ export default function AdminPage() {
               ].map((t) => (
                 <button
                   key={t.value}
-                  onClick={() => setTab(t.value)}
+                  onClick={() => { setTab(t.value); if (t.value !== "races") setMobileMenuOpen(false); }}
                   className={`flex-1 py-2 text-sm font-medium transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
                 >
                   {t.label}
@@ -1108,7 +1146,7 @@ export default function AdminPage() {
             {tab === "races" && filtered.map((race) => (
               <button
                 key={race.slug}
-                onClick={() => setSelected(race)}
+                onClick={() => { setSelected(race); setMobileMenuOpen(false); }}
                 className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${selected?.slug === race.slug ? "bg-gray-50 border-l-2 border-l-gray-900" : ""}`}
               >
                 <p className="text-sm font-medium text-gray-900 leading-snug">{race.name}</p>
@@ -1135,12 +1173,18 @@ export default function AdminPage() {
         </div>
 
         {/* Hovedinnhold */}
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden mb-4 text-sm text-blue-600 hover:underline"
+              >
+                ← Tilbake til løpsliste
+              </button>
               <div className="mb-6">
                 <a href={`/${selected.slug}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
                   Se løpsside →
