@@ -3,6 +3,15 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-07-28",
+    title: "Konsepter-fane og mobilvennlig admin",
+    items: [
+      "Konsepter-fane: kort for sokkekonsepter med status (idé/prøver/dialog/besluttet), leverandør, kontakt og notater",
+      "Adminpanelet er nå mobilvennlig — sidebar blir en skjul/vis-meny på små skjermer",
+      "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
+    ],
+  },
+  {
     date: "2026-07-27",
     title: "Admin-panel",
     items: [
@@ -295,6 +304,246 @@ function DevTab({ adminPw }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const CONCEPT_STATUS = [
+  { value: "idea", label: "Idé", style: "bg-gray-50 text-gray-500 border-gray-200" },
+  { value: "samples", label: "Prøver bestilt", style: "bg-blue-50 text-blue-600 border-blue-200" },
+  { value: "dialogue", label: "I dialog", style: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  { value: "decided", label: "Besluttet", style: "bg-green-50 text-green-700 border-green-200" },
+];
+const CONCEPT_STATUS_MAP = Object.fromEntries(CONCEPT_STATUS.map((s) => [s.value, s]));
+
+function ConceptsTab({ adminPw }) {
+  const [concepts, setConcepts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newSupplier, setNewSupplier] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  function loadConcepts() {
+    return fetch("/api/admin/concepts", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setConcepts(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadConcepts().then(() => setLoading(false));
+  }, [adminPw]);
+
+  async function addConcept(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/concepts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ name: newName.trim(), supplier: newSupplier.trim(), contact: newContact.trim(), notes: newNotes.trim() }),
+    });
+    const concept = await res.json();
+    setConcepts((cs) => [concept, ...cs]);
+    setNewName("");
+    setNewSupplier("");
+    setNewContact("");
+    setNewNotes("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function updateStatus(concept, status) {
+    const res = await fetch("/api/admin/concepts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id: concept.id, status }),
+    });
+    const data = await res.json();
+    setConcepts((cs) => cs.map((c) => c.id === concept.id ? data : c));
+  }
+
+  async function deleteConcept(id) {
+    if (!confirm("Slette konseptet?")) return;
+    await fetch("/api/admin/concepts", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setConcepts((cs) => cs.filter((c) => c.id !== id));
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/concepts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setConcepts((cs) => cs.map((c) => c.id === id ? data : c));
+    setEditingId(null);
+  }
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  function ConceptCard({ c }) {
+    const isEditing = editingId === c.id;
+    const status = CONCEPT_STATUS_MAP[c.status] || CONCEPT_STATUS[0];
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        {isEditing ? (
+          <div className="space-y-3">
+            <input
+              value={editForm.name ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+              className={inputCls}
+              placeholder="Konseptnavn"
+              autoFocus
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                value={editForm.supplier ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, supplier: e.target.value }))}
+                className={inputCls}
+                placeholder="Leverandør"
+              />
+              <input
+                value={editForm.contact ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))}
+                className={inputCls}
+                placeholder="Kontakt (e-post/telefon)"
+              />
+            </div>
+            <textarea
+              value={editForm.notes ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+              className={inputCls}
+              rows={4}
+              placeholder="Notater / logg fra dialog"
+            />
+            <div className="flex gap-2 items-center flex-wrap">
+              <select
+                value={editForm.status ?? c.status}
+                onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                {CONCEPT_STATUS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <button onClick={() => saveEdit(c.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition">Lagre</button>
+              <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700">Avbryt</button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${status.style}`}>
+                    {status.label}
+                  </span>
+                  <p className="font-semibold text-sm text-gray-900">{c.name}</p>
+                </div>
+                {(c.supplier || c.contact) && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {c.supplier}
+                    {c.supplier && c.contact && " · "}
+                    {c.contact}
+                  </p>
+                )}
+                {c.notes && <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{c.notes}</p>}
+              </div>
+              <div className="shrink-0 flex gap-1">
+                <button
+                  onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, supplier: c.supplier || "", contact: c.contact || "", notes: c.notes || "", status: c.status }); }}
+                  className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                >Rediger</button>
+                <button
+                  onClick={() => deleteConcept(c.id)}
+                  className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                >Slett</button>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap mt-3">
+              {CONCEPT_STATUS.map((s) => (
+                <button
+                  key={s.value}
+                  onClick={() => updateStatus(c, s.value)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${c.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Sokkekonsepter</h2>
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAdd ? "Avbryt" : "+ Nytt konsept"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={addConcept} className="bg-white rounded-2xl border border-gray-200 p-5 mb-4 space-y-3">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className={inputCls}
+            placeholder="Konseptnavn *"
+            autoFocus
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              value={newSupplier}
+              onChange={(e) => setNewSupplier(e.target.value)}
+              className={inputCls}
+              placeholder="Leverandør"
+            />
+            <input
+              value={newContact}
+              onChange={(e) => setNewContact(e.target.value)}
+              className={inputCls}
+              placeholder="Kontakt (e-post/telefon)"
+            />
+          </div>
+          <textarea
+            value={newNotes}
+            onChange={(e) => setNewNotes(e.target.value)}
+            className={inputCls}
+            rows={3}
+            placeholder="Notater / status på dialogen"
+          />
+          <button
+            type="submit"
+            disabled={saving || !newName.trim()}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {saving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
+
+      {loading && <p className="text-sm text-gray-400">Laster konsepter…</p>}
+      {!loading && concepts.length === 0 && <p className="text-sm text-gray-400">Ingen konsepter lagt til ennå.</p>}
+
+      <div className="space-y-3">
+        {concepts.map((c) => <ConceptCard key={c.id} c={c} />)}
       </div>
     </div>
   );
@@ -1102,6 +1351,7 @@ export default function AdminPage() {
                 { value: "races", label: "Løp" },
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
+                { value: "concepts", label: "Konsept" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
@@ -1176,6 +1426,7 @@ export default function AdminPage() {
         <div className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
+          {tab === "concepts" && <ConceptsTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
