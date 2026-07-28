@@ -845,7 +845,7 @@ function PasswordGate({ onAuth }) {
     if (res.status === 401) {
       setError("Feil passord");
     } else {
-      sessionStorage.setItem("adminPw", pw);
+      localStorage.setItem("adminPw", pw);
       onAuth(pw);
     }
   }
@@ -1527,7 +1527,7 @@ export default function AdminPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("adminPw");
+    const stored = localStorage.getItem("adminPw");
     if (stored) setAdminPw(stored);
   }, []);
 
@@ -1684,7 +1684,7 @@ export default function AdminPage() {
           </div>
           <div className="p-4 border-t border-gray-100">
             <button
-              onClick={() => { sessionStorage.removeItem("adminPw"); setAdminPw(null); }}
+              onClick={() => { localStorage.removeItem("adminPw"); setAdminPw(null); }}
               className="text-xs text-gray-400 hover:text-gray-600 transition"
             >
               Logg ut
