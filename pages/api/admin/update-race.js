@@ -20,5 +20,14 @@ export default async function handler(req, res) {
   const { error } = await supabase.from("races").update(update).eq("slug", slug);
   if (error) return res.status(500).json({ error: error.message });
 
+  if (slug !== "__ping__") {
+    try {
+      await res.revalidate(`/${slug}`);
+      await res.revalidate("/");
+    } catch (revalidateError) {
+      console.error("Revalidate feilet:", revalidateError);
+    }
+  }
+
   return res.status(200).json({ ok: true });
 }
