@@ -12,6 +12,7 @@ const DEV_LOG = [
       "Egen leverandørliste (navn, kontakt, notater) i Konsepter-fanen",
       "Adminpanelet er nå mobilvennlig — sidebar blir en skjul/vis-meny på små skjermer",
       "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
+      "Tilbud-fane: sammenlign leverandørtilbud gruppert per produkttype (pris, MOQ, leveringstid, notater)",
     ],
   },
   {
@@ -814,6 +815,201 @@ function ConceptsTab({ adminPw }) {
 
       <div className="space-y-3">
         {concepts.map((c) => <ConceptCard key={c.id} c={c} />)}
+      </div>
+    </div>
+  );
+}
+
+function ComparisonTab({ adminPw }) {
+  const [offers, setOffers] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [productType, setProductType] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [price, setPrice] = useState("");
+  const [moq, setMoq] = useState("");
+  const [leadTime, setLeadTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/supplier-offers", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setOffers(Array.isArray(data) ? data : [])),
+      fetch("/api/admin/suppliers", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setSuppliers(Array.isArray(data) ? data : [])),
+    ]).then(() => setLoading(false));
+  }, [adminPw]);
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  const productTypes = [...new Set(offers.map((o) => o.product_type))];
+
+  async function addOffer(e) {
+    e.preventDefault();
+    if (!productType.trim() || !supplierId) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/supplier-offers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({
+        product_type: productType.trim(),
+        supplier_id: supplierId,
+        price: price.trim(),
+        moq: moq.trim(),
+        lead_time: leadTime.trim(),
+        notes: notes.trim(),
+      }),
+    });
+    const offer = await res.json();
+    setOffers((os) => [...os, offer]);
+    setProductType("");
+    setSupplierId("");
+    setPrice("");
+    setMoq("");
+    setLeadTime("");
+    setNotes("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/supplier-offers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setOffers((os) => os.map((o) => o.id === id ? data : o));
+    setEditingId(null);
+  }
+
+  async function deleteOffer(id) {
+    if (!confirm("Slette tilbudet?")) return;
+    await fetch("/api/admin/supplier-offers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setOffers((os) => os.filter((o) => o.id !== id));
+  }
+
+  return (
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Sammenlign leverandører</h2>
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAdd ? "Avbryt" : "+ Nytt tilbud"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={addOffer} className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Produkttype</label>
+            <input
+              value={productType}
+              onChange={(e) => setProductType(e.target.value)}
+              className={inputCls}
+              placeholder="F.eks. Løpecaps, Vanlig sokk, Teknisk løpesokk"
+              list="product-types"
+              autoFocus
+            />
+            <datalist id="product-types">
+              {productTypes.map((t) => <option key={t} value={t} />)}
+            </datalist>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Leverandør</label>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">Velg leverandør…</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            {suppliers.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">Ingen leverandører lagt til ennå — legg til i leverandørlisten under Konsepter-fanen først.</p>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} placeholder="Pris (f.eks. 42-45 kr/par)" />
+            <input value={moq} onChange={(e) => setMoq(e.target.value)} className={inputCls} placeholder="MOQ (f.eks. 336 par/str.)" />
+            <input value={leadTime} onChange={(e) => setLeadTime(e.target.value)} className={inputCls} placeholder="Leveringstid" />
+          </div>
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} rows={2} placeholder="Notater (kvalitet, filformat, forbehold…)" />
+          <button
+            type="submit"
+            disabled={saving || !productType.trim() || !supplierId}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {saving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
+
+      {loading && <p className="text-sm text-gray-400">Laster…</p>}
+      {!loading && offers.length === 0 && <p className="text-sm text-gray-400">Ingen tilbud lagt til ennå.</p>}
+
+      <div className="space-y-8">
+        {productTypes.map((type) => (
+          <div key={type}>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">{type}</h3>
+            <div className="space-y-2">
+              {offers.filter((o) => o.product_type === type).map((o) => {
+                const isEditing = editingId === o.id;
+                return (
+                  <div key={o.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <input value={editForm.price ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))} className={inputCls} placeholder="Pris" />
+                          <input value={editForm.moq ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, moq: e.target.value }))} className={inputCls} placeholder="MOQ" />
+                          <input value={editForm.lead_time ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, lead_time: e.target.value }))} className={inputCls} placeholder="Leveringstid" />
+                        </div>
+                        <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} className={inputCls} rows={2} placeholder="Notater" />
+                        <div className="flex gap-2">
+                          <button onClick={() => saveEdit(o.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition">Lagre</button>
+                          <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700">Avbryt</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm text-gray-900">{o.supplier?.name || "Ukjent leverandør"}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-2 text-sm">
+                            <div><span className="text-gray-400">Pris</span><br />{o.price || "–"}</div>
+                            <div><span className="text-gray-400">MOQ</span><br />{o.moq || "–"}</div>
+                            <div><span className="text-gray-400">Leveringstid</span><br />{o.lead_time || "–"}</div>
+                          </div>
+                          {o.notes && <p className="text-sm text-gray-500 mt-2">{o.notes}</p>}
+                        </div>
+                        <div className="shrink-0 flex gap-1">
+                          <button
+                            onClick={() => { setEditingId(o.id); setEditForm({ price: o.price || "", moq: o.moq || "", lead_time: o.lead_time || "", notes: o.notes || "" }); }}
+                            className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                          >Rediger</button>
+                          <button onClick={() => deleteOffer(o.id)} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition">Slett</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1622,6 +1818,7 @@ export default function AdminPage() {
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
                 { value: "concepts", label: "Konsept" },
+                { value: "compare", label: "Tilbud" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
@@ -1697,6 +1894,7 @@ export default function AdminPage() {
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "concepts" && <ConceptsTab adminPw={adminPw} />}
+          {tab === "compare" && <ComparisonTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
