@@ -821,12 +821,12 @@ function ConceptsTab({ adminPw }) {
 }
 
 const OFFER_STATUS = [
-  { value: "contacted", label: "Kontaktet", style: "bg-gray-50 text-gray-500 border-gray-200" },
-  { value: "waiting", label: "Venter svar", style: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  { value: "received", label: "Tilbud mottatt", style: "bg-blue-50 text-blue-600 border-blue-200" },
-  { value: "sample", label: "Prøve bestilt", style: "bg-purple-50 text-purple-600 border-purple-200" },
-  { value: "rejected", label: "Avslått", style: "bg-red-50 text-red-500 border-red-200" },
-  { value: "chosen", label: "Valgt", style: "bg-green-50 text-green-700 border-green-200" },
+  { value: "contacted", label: "Kontaktet", style: "bg-gray-50 text-gray-500 border-gray-200", edge: "border-l-gray-300" },
+  { value: "waiting", label: "Venter svar", style: "bg-yellow-50 text-yellow-700 border-yellow-200", edge: "border-l-yellow-400" },
+  { value: "received", label: "Tilbud mottatt", style: "bg-blue-50 text-blue-600 border-blue-200", edge: "border-l-blue-400" },
+  { value: "sample", label: "Prøve bestilt", style: "bg-purple-50 text-purple-600 border-purple-200", edge: "border-l-purple-400" },
+  { value: "rejected", label: "Avslått", style: "bg-red-50 text-red-500 border-red-200", edge: "border-l-red-400" },
+  { value: "chosen", label: "Valgt", style: "bg-green-50 text-green-700 border-green-200", edge: "border-l-green-400" },
 ];
 const OFFER_STATUS_MAP = Object.fromEntries(OFFER_STATUS.map((s) => [s.value, s]));
 
@@ -1012,7 +1012,7 @@ function ComparisonTab({ adminPw }) {
                   const isEditing = editingId === o.id;
                   const st = OFFER_STATUS_MAP[o.status] || OFFER_STATUS[0];
                   return (
-                    <div key={o.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <div key={o.id} className={`bg-white rounded-2xl border border-gray-200 border-l-4 ${st.edge} p-4`}>
                       {isEditing ? (
                         <div className="space-y-2">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1030,16 +1030,32 @@ function ComparisonTab({ adminPw }) {
                         <div>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${st.style}`}>{st.label}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-semibold text-sm text-gray-900">{o.supplier?.name || "Ukjent leverandør"}</p>
+                                <select
+                                  value={o.status}
+                                  onChange={(e) => updateStatus(o, e.target.value)}
+                                  className={`shrink-0 text-xs font-medium border rounded-full pl-2.5 pr-5 py-1 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-900 ${st.style}`}
+                                >
+                                  {OFFER_STATUS.map((s) => (
+                                    <option key={s.value} value={s.value}>{s.label}</option>
+                                  ))}
+                                </select>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-2 text-sm">
+                              {o.supplier?.contact && (
+                                <p className="text-xs text-gray-400 mt-0.5">{o.supplier.contact}</p>
+                              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-sm">
                                 <div><span className="text-gray-400">Pris</span><br />{o.price || "–"}</div>
                                 <div><span className="text-gray-400">MOQ</span><br />{o.moq || "–"}</div>
                                 <div><span className="text-gray-400">Leveringstid</span><br />{o.lead_time || "–"}</div>
                               </div>
-                              {o.notes && <p className="text-sm text-gray-500 mt-2">{o.notes}</p>}
+                              {o.notes && (
+                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                  <p className="text-xs text-gray-400 mb-1">Notater</p>
+                                  <p className="text-sm text-gray-600">{o.notes}</p>
+                                </div>
+                              )}
                             </div>
                             <div className="shrink-0 flex gap-1">
                               <button
@@ -1048,17 +1064,6 @@ function ComparisonTab({ adminPw }) {
                               >Rediger</button>
                               <button onClick={() => deleteOffer(o.id)} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition">Slett</button>
                             </div>
-                          </div>
-                          <div className="flex gap-1.5 flex-wrap mt-3">
-                            {OFFER_STATUS.map((s) => (
-                              <button
-                                key={s.value}
-                                onClick={() => updateStatus(o, s.value)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${o.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-                              >
-                                {s.label}
-                              </button>
-                            ))}
                           </div>
                         </div>
                       )}
