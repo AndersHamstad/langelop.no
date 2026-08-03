@@ -13,6 +13,7 @@ const DEV_LOG = [
       "Adminpanelet er nå mobilvennlig — sidebar blir en skjul/vis-meny på små skjermer",
       "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
       "Tilbud-fane: leverandørhenvendelser gruppert per konsept, med egen status (kontaktet/venter/tilbud mottatt/prøve/avslått/valgt) og pris/MOQ/leveringstid",
+      "Slo sammen Konsept- og Tilbud-fanen til én, med intern bryter og direkte «Se tilbud →»-lenke fra hvert konsept",
     ],
   },
   {
@@ -476,7 +477,7 @@ function SupplierSection({ adminPw }) {
   );
 }
 
-function ConceptsTab({ adminPw }) {
+function ConceptsTab({ adminPw, onViewOffers }) {
   const [concepts, setConcepts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -714,16 +715,26 @@ function ConceptsTab({ adminPw }) {
                 >Slett</button>
               </div>
             </div>
-            <div className="flex gap-1.5 flex-wrap mt-3">
-              {CONCEPT_STATUS.map((s) => (
+            <div className="flex items-center justify-between gap-2 flex-wrap mt-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {CONCEPT_STATUS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateStatus(c, s.value)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${c.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              {onViewOffers && (
                 <button
-                  key={s.value}
-                  onClick={() => updateStatus(c, s.value)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${c.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                  onClick={() => onViewOffers(c.id)}
+                  className="text-xs font-medium text-blue-600 hover:underline"
                 >
-                  {s.label}
+                  Se tilbud →
                 </button>
-              ))}
+              )}
             </div>
           </div>
         )}
@@ -830,12 +841,13 @@ const OFFER_STATUS = [
 ];
 const OFFER_STATUS_MAP = Object.fromEntries(OFFER_STATUS.map((s) => [s.value, s]));
 
-function ComparisonTab({ adminPw }) {
+function ComparisonTab({ adminPw, focusConceptId }) {
   const [offers, setOffers] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const conceptRefs = useRef({});
   const [conceptId, setConceptId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [status, setStatus] = useState("contacted");
@@ -860,6 +872,16 @@ function ComparisonTab({ adminPw }) {
         .then((data) => setSuppliers(Array.isArray(data) ? data : [])),
     ]).then(() => setLoading(false));
   }, [adminPw]);
+
+  useEffect(() => {
+    if (!loading && focusConceptId && conceptRefs.current[focusConceptId]) {
+      conceptRefs.current[focusConceptId].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [loading, focusConceptId]);
+
+  useEffect(() => {
+    if (focusConceptId) setConceptId(String(focusConceptId));
+  }, [focusConceptId]);
 
   const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
 
@@ -999,8 +1021,13 @@ function ComparisonTab({ adminPw }) {
         {orderedConceptIds.map((cid) => {
           const concept = concepts.find((c) => c.id === cid);
           const conceptOffers = offers.filter((o) => o.concept_id === cid);
+          const isFocused = focusConceptId && String(focusConceptId) === String(cid);
           return (
-            <div key={cid}>
+            <div
+              key={cid}
+              ref={(el) => { conceptRefs.current[cid] = el; }}
+              className={isFocused ? "ring-2 ring-gray-900 ring-offset-4 ring-offset-gray-100 rounded-2xl" : ""}
+            >
               <div className="flex items-center gap-3 mb-3">
                 {concept?.image_url && (
                   <img src={concept.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
@@ -1075,6 +1102,39 @@ function ComparisonTab({ adminPw }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function ProductDevTab({ adminPw }) {
+  const [subTab, setSubTab] = useState("concepts");
+  const [focusConceptId, setFocusConceptId] = useState(null);
+
+  function viewOffers(conceptId) {
+    setFocusConceptId(conceptId);
+    setSubTab("compare");
+  }
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
+        {[
+          { value: "concepts", label: "Konsepter" },
+          { value: "compare", label: "Tilbud" },
+        ].map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setSubTab(t.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              subTab === t.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {subTab === "concepts" && <ConceptsTab adminPw={adminPw} onViewOffers={viewOffers} />}
+      {subTab === "compare" && <ComparisonTab adminPw={adminPw} focusConceptId={focusConceptId} />}
     </div>
   );
 }
@@ -1881,14 +1941,13 @@ export default function AdminPage() {
                 { value: "races", label: "Løp" },
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
-                { value: "concepts", label: "Konsept" },
-                { value: "compare", label: "Tilbud" },
+                { value: "concepts", label: "Konsepter" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
                   key={t.value}
                   onClick={() => { setTab(t.value); if (t.value !== "races") setMobileMenuOpen(false); }}
-                  className={`flex-1 py-2 text-sm font-medium transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                  className={`flex-1 py-2 px-1 text-sm font-medium border-r border-gray-200 last:border-r-0 transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
                 >
                   {t.label}
                 </button>
@@ -1957,8 +2016,7 @@ export default function AdminPage() {
         <div className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
-          {tab === "concepts" && <ConceptsTab adminPw={adminPw} />}
-          {tab === "compare" && <ComparisonTab adminPw={adminPw} />}
+          {tab === "concepts" && <ProductDevTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
