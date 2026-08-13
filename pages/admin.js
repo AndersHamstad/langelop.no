@@ -14,6 +14,7 @@ const DEV_LOG = [
       "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
       "Tilbud-fane: leverandørhenvendelser gruppert per konsept, med egen status (kontaktet/venter/tilbud mottatt/prøve/avslått/valgt) og pris/MOQ/leveringstid",
       "Slo sammen Konsept- og Tilbud-fanen til én, med intern bryter og direkte «Se tilbud →»-lenke fra hvert konsept",
+      "Mulig å registrere sokkebestillinger manuelt i Shop-fanen, for salg utenfor nettsiden (f.eks. privat via Vipps)",
     ],
   },
   {
@@ -1393,6 +1394,9 @@ function ShopTab({ adminPw }) {
   const [adjQty, setAdjQty] = useState("");
   const [adjNote, setAdjNote] = useState("");
   const [adjSaving, setAdjSaving] = useState(false);
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [newOrder, setNewOrder] = useState({ name: "", email: "", size: "S", quantity: 1, address: "", postal_code: "", city: "", status: "paid", total_price: "", notes: "" });
+  const [orderSaving, setOrderSaving] = useState(false);
 
   function loadAdjustments() {
     return fetch("/api/admin/stock-adjustments", { headers: { "x-admin-password": adminPw } })
@@ -1431,6 +1435,33 @@ function ShopTab({ adminPw }) {
       body: JSON.stringify({ id, status }),
     });
     setOrders((os) => os.map((o) => o.id === id ? { ...o, status } : o));
+  }
+
+  async function addOrder(e) {
+    e.preventDefault();
+    if (!newOrder.name.trim() || !newOrder.quantity) return;
+    setOrderSaving(true);
+    const res = await fetch("/api/admin/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({
+        name: newOrder.name.trim(),
+        email: newOrder.email.trim(),
+        size: newOrder.size,
+        quantity: parseInt(newOrder.quantity),
+        address: newOrder.address.trim(),
+        postal_code: newOrder.postal_code.trim(),
+        city: newOrder.city.trim(),
+        status: newOrder.status,
+        total_price: newOrder.total_price ? parseInt(newOrder.total_price) : getTotal(parseInt(newOrder.quantity)),
+        notes: newOrder.notes.trim(),
+      }),
+    });
+    const order = await res.json();
+    setOrders((os) => [order, ...os]);
+    setNewOrder({ name: "", email: "", size: "S", quantity: 1, address: "", postal_code: "", city: "", status: "paid", total_price: "", notes: "" });
+    setShowAddOrder(false);
+    setOrderSaving(false);
   }
 
   function formatDate(str) {
@@ -1473,10 +1504,55 @@ function ShopTab({ adminPw }) {
   );
 
   const filtered = orders.filter((o) => filterStatus === "all" || o.status === filterStatus);
+  const ordInputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Sokkebestillinger</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Sokkebestillinger</h2>
+        <button
+          onClick={() => setShowAddOrder((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAddOrder ? "Avbryt" : "+ Legg til bestilling"}
+        </button>
+      </div>
+
+      {showAddOrder && (
+        <form onSubmit={addOrder} className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 space-y-3">
+          <p className="text-xs text-gray-400">For salg utenfor nettsiden, f.eks. privat via Vipps.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input value={newOrder.name} onChange={(e) => setNewOrder((f) => ({ ...f, name: e.target.value }))} className={ordInputCls} placeholder="Navn *" />
+            <input value={newOrder.email} onChange={(e) => setNewOrder((f) => ({ ...f, email: e.target.value }))} className={ordInputCls} placeholder="E-post (valgfritt)" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <select value={newOrder.size} onChange={(e) => setNewOrder((f) => ({ ...f, size: e.target.value }))} className={ordInputCls}>
+              {["S", "M", "L"].map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <input type="number" min="1" value={newOrder.quantity} onChange={(e) => setNewOrder((f) => ({ ...f, quantity: e.target.value }))} className={ordInputCls} placeholder="Antall par" />
+            <select value={newOrder.status} onChange={(e) => setNewOrder((f) => ({ ...f, status: e.target.value }))} className={`${ordInputCls} col-span-2 sm:col-span-1`}>
+              {ORDER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input value={newOrder.address} onChange={(e) => setNewOrder((f) => ({ ...f, address: e.target.value }))} className={`${ordInputCls} sm:col-span-1`} placeholder="Adresse (valgfritt)" />
+            <input value={newOrder.postal_code} onChange={(e) => setNewOrder((f) => ({ ...f, postal_code: e.target.value }))} className={ordInputCls} placeholder="Postnr" />
+            <input value={newOrder.city} onChange={(e) => setNewOrder((f) => ({ ...f, city: e.target.value }))} className={ordInputCls} placeholder="Sted" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Totalpris (kr) — la stå tomt for standardpris ({getTotal(parseInt(newOrder.quantity) || 1)} kr for {newOrder.quantity || 1} par)</label>
+            <input type="number" min="0" value={newOrder.total_price} onChange={(e) => setNewOrder((f) => ({ ...f, total_price: e.target.value }))} className={ordInputCls} placeholder="Standardpris brukes hvis tomt" />
+          </div>
+          <textarea value={newOrder.notes} onChange={(e) => setNewOrder((f) => ({ ...f, notes: e.target.value }))} className={ordInputCls} rows={2} placeholder="Notater (f.eks. «Solgt privat via Vipps»)" />
+          <button
+            type="submit"
+            disabled={orderSaving || !newOrder.name.trim() || !newOrder.quantity}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {orderSaving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
 
       {/* Økonomi-kort */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">

@@ -30,5 +30,28 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  if (req.method === "POST") {
+    const { name, email, size, quantity, address, postal_code, city, status, total_price, notes } = req.body;
+    if (!name || !size || !quantity) return res.status(400).json({ error: "Navn, størrelse og antall påkrevd" });
+    const { data, error } = await supabase
+      .from("sock_orders")
+      .insert([{
+        name,
+        email: email || null,
+        size,
+        quantity,
+        address: address || null,
+        postal_code: postal_code || null,
+        city: city || null,
+        status: status || "paid",
+        total_price: total_price != null ? total_price : null,
+        notes: notes || null,
+      }])
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json(data);
+  }
+
   return res.status(405).end();
 }
