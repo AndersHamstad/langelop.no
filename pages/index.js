@@ -11,6 +11,7 @@ import TopNavPill from '../components/TopNavPill';
 import { CalendarToggle } from '../components/CalendarToggle';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Image from 'next/image';
 import { articles } from '../data/articles';
 import { SlidersHorizontal, X, Flame, Clock } from 'lucide-react';
 
@@ -780,14 +781,17 @@ export default function Home({ races, fetchError }) {
             {showFeatured && (
               <a
                 href={`/${featuredRace.slug}`}
-                className={`group relative block rounded-2xl overflow-hidden mb-6 transition shadow-md hover:shadow-xl ${
+                className={`group relative block h-52 md:h-72 rounded-2xl overflow-hidden mb-6 transition shadow-md hover:shadow-xl ${
                   featuredIsPaid ? 'ring-2 ring-amber-400/60' : ''
                 }`}
               >
-                <img
+                <Image
                   src={featuredRace.image_url}
                   alt={featuredRace.name}
-                  className="w-full h-52 md:h-72 object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
@@ -898,11 +902,13 @@ export default function Home({ races, fetchError }) {
                             )}
 
                             {/* Image */}
-                            <div className="relative overflow-hidden">
-                              <img
+                            <div className="relative h-28 overflow-hidden">
+                              <Image
                                 src={race.image_url || '/fallback.jpg'}
                                 alt={`${race.name}`}
-                                className={`w-full h-28 object-cover transition-all duration-300 ${
+                                fill
+                                sizes="(max-width: 640px) 50vw, 300px"
+                                className={`object-cover transition-all duration-300 ${
                                   isSoldOut
                                     ? ''
                                     : 'opacity-75 group-hover:opacity-100 group-hover:scale-105'
@@ -1082,11 +1088,13 @@ export default function Home({ races, fetchError }) {
                   className="group flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 overflow-hidden transition"
                 >
                   {article.image && (
-                    <div className="overflow-hidden">
-                      <img
+                    <div className="relative h-40 overflow-hidden">
+                      <Image
                         src={article.image}
                         alt={article.title}
-                        className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                         style={{ objectPosition: article.focusList || 'center 50%' }}
                       />
                     </div>

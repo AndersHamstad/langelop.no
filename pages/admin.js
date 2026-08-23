@@ -3,6 +3,15 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-08-23",
+    title: "Bildeoptimalisering (Supabase cached egress)",
+    items: [
+      "Bytta rå <img>-tagger til next/image på forsiden (hero, løpskort, artikkelkort) og løpssiden (nærliggende løp, hero-bilde)",
+      "Løste Supabase «Cached Egress Exceeded»-varselet — bilder ble tidligere lastet i full oppløsning selv som små thumbnails",
+      "La til therunningchannel.com i next.config.js sin images.domains (ett artikkelbilde er hostet der)",
+    ],
+  },
+  {
     date: "2026-07-28",
     title: "Konsepter-fane og mobilvennlig admin",
     items: [

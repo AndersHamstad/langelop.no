@@ -2,6 +2,7 @@
 import Head from 'next/head';
 import Script from 'next/script';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../lib/supabaseClient';
 import { buildRaceJsonLd } from '../lib/structuredData';
 import { useState, useRef, useEffect } from 'react';
@@ -225,10 +226,12 @@ function NearbyRaceCard({ race }) {
     <Link href={`/${race.slug}`}
       className="flex-shrink-0 w-56 sm:w-auto bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition group">
       <div className="relative h-24 bg-gray-100 overflow-hidden">
-        <img
+        <Image
           src={race.image_url || '/fallback.jpg'}
           alt={race.name}
-          className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-300"
+          fill
+          sizes="(max-width: 640px) 224px, 200px"
+          className="object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-300"
         />
       </div>
       <div className="p-3">
@@ -432,8 +435,9 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
       {/* Hero */}
       <div className="relative w-full h-[42vh] md:h-[46vh] overflow-hidden bg-gray-900">
         {race.image_url ? (
-          <img src={race.image_url} alt={race.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-50 scale-105 blur-[1px]" />
+          <Image src={race.image_url} alt={race.name} fill priority
+            sizes="100vw"
+            className="object-cover opacity-50 scale-105 blur-[1px]" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />
         )}
