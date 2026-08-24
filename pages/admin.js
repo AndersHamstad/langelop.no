@@ -3,12 +3,13 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
-    date: "2026-08-23",
+    date: "2026-08-24",
     title: "Bildeoptimalisering (Supabase cached egress)",
     items: [
-      "Bytta rå <img>-tagger til next/image på forsiden (hero, løpskort, artikkelkort) og løpssiden (nærliggende løp, hero-bilde)",
-      "Løste Supabase «Cached Egress Exceeded»-varselet — bilder ble tidligere lastet i full oppløsning selv som små thumbnails",
-      "La til therunningchannel.com i next.config.js sin images.domains (ett artikkelbilde er hostet der)",
+      "Ny SmartImage-komponent: bruker next/image kun for bilder vi selv eier (Supabase-lagring), vanlig <img> for alt annet",
+      "Løste Supabase «Cached Egress Exceeded»-varselet — egne bilder ble tidligere lastet i full oppløsning selv som små thumbnails",
+      "Løpsbilder hentes fra ~45 ulike arrangør-domener — for mange til å whiteliste enkeltvis, derfor fallback til <img> for eksterne kilder i stedet",
+      "Rettet en runde med ødelagte bilder på live-siden (400-feil) som oppsto da alle bilder først ble sendt via next/image uten at eksterne domener var whitelistet",
     ],
   },
   {
