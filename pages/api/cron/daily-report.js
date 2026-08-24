@@ -11,13 +11,16 @@ const supabase = createClient(
 
 
 export default async function handler(req, res) {
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+  const isCron = req.headers.authorization === `Bearer ${process.env.CRON_SECRET}`;
+  const isAdmin = req.headers['x-admin-password'] === process.env.ADMIN_PASSWORD;
+  if (!isCron && !isAdmin) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  const forceSend = isAdmin && req.query.force === '1';
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [subscribers, totalSubscribersRes, utstyrReviews, produktReviews, raceSubmissions, raceUpdates] =
+  const [subscribers, totalSubscribersRes, utstyrReviews, produktReviews, raceSubmissions, raceUpdates, raceComments, articleComments] =
     await Promise.all([
       supabase.from('newsletter_subscribers').select('email, created_at').gte('created_at', since),
       supabase.from('newsletter_subscribers').select('email'),
@@ -25,7 +28,17 @@ export default async function handler(req, res) {
       supabase.from('produkt_reviews').select('produkt_id, navn, rating, kommentar, created_at').gte('created_at', since),
       supabase.from('race_submissions').select('navn, dato, distanse, sted, region, kontakt_navn, kontakt_epost, created_at').gte('created_at', since),
       supabase.from('race_updates').select('lop_navn, endring, kontakt_epost, created_at').gte('created_at', since),
+      supabase.from('comments').select('race_id, name, comment, created_at').gte('created_at', since),
+      supabase.from('article_comments').select('article_slug, name, comment, created_at').gte('created_at', since),
     ]);
+
+  // Løpsnavn for kommentarene (comments-tabellen har kun race_id)
+  const raceIds = [...new Set((raceComments.data || []).map((c) => c.race_id))];
+  const raceNameById = {};
+  if (raceIds.length > 0) {
+    const { data: raceNames } = await supabase.from('races').select('id, name').in('id', raceIds);
+    (raceNames || []).forEach((r) => { raceNameById[r.id] = r.name; });
+  }
 
   const newCount = subscribers.data?.length || 0;
   const totalCount = totalSubscribersRes.data?.length ?? 0;
@@ -34,9 +47,11 @@ export default async function handler(req, res) {
     (utstyrReviews.data?.length || 0) +
     (produktReviews.data?.length || 0) +
     (raceSubmissions.data?.length || 0) +
-    (raceUpdates.data?.length || 0);
+    (raceUpdates.data?.length || 0) +
+    (raceComments.data?.length || 0) +
+    (articleComments.data?.length || 0);
 
-  if (total === 0) {
+  if (total === 0 && !forceSend) {
     console.log('Ingen nye hendelser siste 24t – hopper over e-post.');
     return res.status(200).json({ ok: true, sent: false });
   }
@@ -91,6 +106,14 @@ export default async function handler(req, res) {
         (r) => [`<b>${r.produkt_id}</b>`, r.navn, stars(r.rating), r.kommentar || '–']
       )}
 
+      ${section('', 'Nye løpskommentarer (til godkjenning)', raceComments.data,
+        (r) => [`<b>${raceNameById[r.race_id] || r.race_id}</b>`, r.name, r.comment]
+      )}
+
+      ${section('', 'Nye artikkelkommentarer', articleComments.data,
+        (r) => [`<b>${r.article_slug}</b>`, r.name, r.comment]
+      )}
+
       <p style="margin-top:32px;font-size:11px;color:#bbb;">
         Anmeldelser godkjennes i Supabase-dashbordet. Sendt automatisk fra langelop.no.
       </p>
@@ -105,12 +128,14 @@ export default async function handler(req, res) {
     await transporter.sendMail({
       from: `"Langeløp.no" <${process.env.GMAIL_USER}>`,
       to: process.env.REPORT_EMAIL,
-      subject: `📊 Daglig rapport – ${total} nye hendelse${total !== 1 ? 'r' : ''} · ${new Date().toLocaleDateString('nb-NO')}`,
+      subject: forceSend
+        ? `🧪 Testrapport – ${total} nye hendelse${total !== 1 ? 'r' : ''} · ${new Date().toLocaleDateString('nb-NO')}`
+        : `📊 Daglig rapport – ${total} nye hendelse${total !== 1 ? 'r' : ''} · ${new Date().toLocaleDateString('nb-NO')}`,
       html,
     });
   } catch (err) {
     console.error('E-post feilet:', err);
-    return res.status(500).json({ error: 'E-post feilet' });
+    return res.status(500).json({ error: 'E-post feilet: ' + err.message });
   }
 
   return res.status(200).json({ ok: true, sent: true, total });

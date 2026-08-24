@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
+    title: "Daglig rapport: manglet kommentarer + manuell test-knapp",
+    items: [
+      "Den daglige rapport-eposten dekket aldri løpskommentarer eller artikkelkommentarer — lagt til som egne seksjoner",
+      "Ny «Send testrapport nå»-knapp i Dev-fanen (Systemsjekk) for å trigge rapporten manuelt og se om e-post faktisk sendes",
+      "Rapport-endepunktet godtar nå enten CRON_SECRET (Vercel Cron) eller admin-passord (manuell test)",
+    ],
+  },
+  {
+    date: "2026-08-24",
     title: "Bildeoptimalisering (Supabase cached egress)",
     items: [
       "Ny SmartImage-komponent: bruker next/image kun for bilder vi selv eier (Supabase-lagring), vanlig <img> for alt annet",
@@ -97,6 +106,27 @@ function DevTab({ adminPw }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [reportSending, setReportSending] = useState(false);
+  const [reportResult, setReportResult] = useState(null);
+
+  async function sendTestReport() {
+    setReportSending(true);
+    setReportResult(null);
+    try {
+      const res = await fetch("/api/cron/daily-report?force=1", {
+        headers: { "x-admin-password": adminPw },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReportResult({ ok: false, message: data.error || "Ukjent feil" });
+      } else {
+        setReportResult({ ok: true, message: `Sendt! ${data.total} hendelse(r) siste 24t.` });
+      }
+    } catch (err) {
+      setReportResult({ ok: false, message: err.message });
+    }
+    setReportSending(false);
+  }
 
   function loadTasks() {
     return fetch("/api/admin/dev-tasks", { headers: { "x-admin-password": adminPw } })
@@ -233,6 +263,29 @@ function DevTab({ adminPw }) {
 
   return (
     <div className="max-w-3xl space-y-10">
+      {/* Systemsjekk */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Systemsjekk</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="font-semibold text-sm text-gray-900">Daglig rapport (e-post)</p>
+            <p className="text-sm text-gray-500 mt-0.5">Trigger rapport-cronen manuelt for å teste at e-post faktisk går gjennom.</p>
+          </div>
+          <button
+            onClick={sendTestReport}
+            disabled={reportSending}
+            className="shrink-0 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {reportSending ? "Sender…" : "Send testrapport nå"}
+          </button>
+        </div>
+        {reportResult && (
+          <p className={`text-sm mt-2 ${reportResult.ok ? "text-green-600" : "text-red-600"}`}>
+            {reportResult.ok ? "✓ " : "✗ "}{reportResult.message}
+          </p>
+        )}
+      </div>
+
       {/* TODO */}
       <div>
         <div className="flex items-center justify-between mb-4">
