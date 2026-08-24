@@ -11,7 +11,7 @@ import TopNavPill from '../components/TopNavPill';
 import { CalendarToggle } from '../components/CalendarToggle';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import Image from 'next/image';
+import SmartImage from '../components/SmartImage';
 import { articles } from '../data/articles';
 import { SlidersHorizontal, X, Flame, Clock } from 'lucide-react';
 
@@ -785,7 +785,7 @@ export default function Home({ races, fetchError }) {
                   featuredIsPaid ? 'ring-2 ring-amber-400/60' : ''
                 }`}
               >
-                <Image
+                <SmartImage
                   src={featuredRace.image_url}
                   alt={featuredRace.name}
                   fill
@@ -903,7 +903,7 @@ export default function Home({ races, fetchError }) {
 
                             {/* Image */}
                             <div className="relative h-28 overflow-hidden">
-                              <Image
+                              <SmartImage
                                 src={race.image_url || '/fallback.jpg'}
                                 alt={`${race.name}`}
                                 fill
@@ -1089,7 +1089,7 @@ export default function Home({ races, fetchError }) {
                 >
                   {article.image && (
                     <div className="relative h-40 overflow-hidden">
-                      <Image
+                      <SmartImage
                         src={article.image}
                         alt={article.title}
                         fill
