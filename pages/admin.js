@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
+    title: "SEO-opprydding: admin blokkert, manglende lang-attributt",
+    items: [
+      "Admin-panelet var verken blokkert i robots.txt eller merket noindex — kunne i teorien dukke opp i Google-søk",
+      "La til Disallow: /admin og /api/ i robots.txt, og noindex-meta på /admin",
+      "Nettstedet manglet pages/_document.js — <html> hadde ingen lang-attributt. La til lang=\"nb\"",
+    ],
+  },
+  {
+    date: "2026-08-24",
     title: "SEO på shop-siden",
     items: [
       "Shop-siden hadde ingen egne meta-tagger — arvet forsidens tittel/beskrivelse om ultraløp, ikke sokker",
@@ -2042,6 +2051,7 @@ export default function AdminPage() {
     <>
       <Head>
         <title>Admin – Langeløp.no</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
