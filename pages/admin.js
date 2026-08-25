@@ -4,6 +4,16 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
+    title: "Oppdateringer-fane: strukturer ChatGPT-digest med Claude",
+    items: [
+      "Ny fane i admin: lim inn ChatGPT sin oppdatering (resultater, nye løp, påmeldingsåpninger) og få den strukturert automatisk",
+      "Ny tabell digest_suggestions + API-endepunkt /api/admin/digest-parse som kaller Claude (Anthropic API) for å tolke teksten og matche mot eksisterende løp",
+      "Godkjenn/avvis per forslag — resultater går til race_results, korrigeringer patcher løpet direkte, nye løp havner i den eksisterende race_submissions-køen",
+      "Krever ANTHROPIC_API_KEY som ny miljøvariabel i Vercel",
+    ],
+  },
+  {
+    date: "2026-08-24",
     title: "SEO-opprydding: admin blokkert, manglende lang-attributt",
     items: [
       "Admin-panelet var verken blokkert i robots.txt eller merket noindex — kunne i teorien dukke opp i Google-søk",
@@ -1222,6 +1232,154 @@ function ProductDevTab({ adminPw }) {
   );
 }
 
+const DIGEST_TYPE_LABEL = { result: "Resultat", race_update: "Oppdatering", new_race: "Nytt løp" };
+const DIGEST_TYPE_STYLE = {
+  result: "bg-blue-50 text-blue-600 border-blue-200",
+  race_update: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  new_race: "bg-green-50 text-green-700 border-green-200",
+};
+
+function DigestTab({ adminPw }) {
+  const [text, setText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+
+  function loadSuggestions() {
+    return fetch("/api/admin/digest-suggestions?status=pending", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setSuggestions(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadSuggestions().then(() => setLoading(false));
+  }, [adminPw]);
+
+  async function parseText() {
+    setParsing(true);
+    setParseResult(null);
+    try {
+      const res = await fetch("/api/admin/digest-parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setParseResult({ ok: false, message: data.error });
+      } else {
+        setParseResult({ ok: true, message: `${data.count} forslag funnet` });
+        setText("");
+        await loadSuggestions();
+      }
+    } catch (err) {
+      setParseResult({ ok: false, message: err.message });
+    }
+    setParsing(false);
+  }
+
+  async function act(id, action) {
+    setBusyId(id);
+    const res = await fetch("/api/admin/digest-suggestions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, action }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert("Feil: " + data.error);
+    } else {
+      setSuggestions((s) => s.filter((x) => x.id !== id));
+    }
+    setBusyId(null);
+  }
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Lim inn oppdatering</h2>
+        <p className="text-sm text-gray-500 mb-3">
+          Lim inn teksten fra ChatGPT (resultater, nye løp, påmeldingsåpninger, korrigeringer).
+          Claude strukturerer den og foreslår endringer under — ingenting går live før du godkjenner hvert forslag.
+        </p>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+          placeholder="Lim inn hele oppdateringen her…"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition"
+        />
+        <button
+          onClick={parseText}
+          disabled={parsing || text.trim().length < 20}
+          className="mt-3 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+        >
+          {parsing ? "Analyserer…" : "Analyser"}
+        </button>
+        {parseResult && (
+          <p className={`text-sm mt-2 ${parseResult.ok ? "text-green-600" : "text-red-600"}`}>
+            {parseResult.ok ? "✓ " : "✗ "}{parseResult.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Ventende forslag</h2>
+        {loading && <p className="text-sm text-gray-400">Laster…</p>}
+        {!loading && suggestions.length === 0 && <p className="text-sm text-gray-400">Ingen ventende forslag.</p>}
+        <div className="space-y-3">
+          {suggestions.map((s) => {
+            const needsMatch = (s.type === "result" || s.type === "race_update") && !s.race_slug;
+            return (
+              <div key={s.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <span className={`text-xs font-medium border rounded-full px-2.5 py-1 ${DIGEST_TYPE_STYLE[s.type]}`}>
+                    {DIGEST_TYPE_LABEL[s.type] || s.type}
+                  </span>
+                  <span className="font-semibold text-sm text-gray-900">{s.race_name}</span>
+                  {s.race_slug ? (
+                    <span className="text-xs text-gray-400">matchet: {s.race_slug}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600">ingen match i databasen</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{s.summary}</p>
+                {s.source_url && (
+                  <a href={s.source_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                    Kilde ↗
+                  </a>
+                )}
+                <div className="flex gap-2 mt-3 items-center">
+                  <button
+                    onClick={() => act(s.id, "approve")}
+                    disabled={busyId === s.id || needsMatch}
+                    title={needsMatch ? "Ingen matchet løp — kan ikke godkjennes automatisk" : ""}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-40"
+                  >
+                    Godkjenn
+                  </button>
+                  <button
+                    onClick={() => act(s.id, "reject")}
+                    disabled={busyId === s.id}
+                    className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    Avvis
+                  </button>
+                  {needsMatch && (
+                    <span className="text-xs text-gray-400">Match manuelt i Supabase, eller avvis</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_OPTIONS = [
   { value: "", label: "Ingen" },
   { value: "Utsolgt", label: "Utsolgt" },
@@ -2101,6 +2259,7 @@ export default function AdminPage() {
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
                 { value: "concepts", label: "Konsepter" },
+                { value: "digest", label: "Oppdateringer" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
@@ -2176,6 +2335,7 @@ export default function AdminPage() {
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "concepts" && <ProductDevTab adminPw={adminPw} />}
+          {tab === "digest" && <DigestTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
