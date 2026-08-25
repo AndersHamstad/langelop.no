@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
@@ -513,8 +514,50 @@ export default function Shop() {
     setTimeout(() => setMobileCtaOpen(false), 2500);
   }
 
+  const seoTitle = "Løpesokker – Langeløp Endurance Crew | langelop.no";
+  const seoDesc = "Kjøp Langeløp Endurance Crew – slitesterke, komfortable løpesokker laget for lange dager på beina. Fra 249 kr per par, levering med Vipps.";
+  const seoImage = `https://www.langelop.no${PRODUCT.images[0]}`;
+  const inStock = SIZES.some((s) => !s.soldOut);
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: PRODUCT.name,
+    description: PRODUCT.subtitle,
+    image: PRODUCT.images.map((img) => `https://www.langelop.no${img}`),
+    brand: { "@type": "Brand", name: "Langeløp" },
+    offers: {
+      "@type": "Offer",
+      url: "https://www.langelop.no/shop",
+      priceCurrency: "NOK",
+      price: "249",
+      availability: inStock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 px-4 pt-14 pb-24 md:pb-14">
+      <Head>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDesc} />
+        <link rel="canonical" href="https://www.langelop.no/shop" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDesc} />
+        <meta property="og:url" content="https://www.langelop.no/shop" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content={seoImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDesc} />
+        <meta name="twitter:image" content={seoImage} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        />
+      </Head>
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-green-700">
@@ -524,11 +567,11 @@ export default function Shop() {
           <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-                {PRODUCT.name}
+                {PRODUCT.name} – løpesokker for lange dager
               </h1>
               <p className="mt-2 max-w-2xl text-gray-600">
-                Første limited drop fra Langeløp. Bestill nå og betal enkelt
-                via Vipps.
+                Håndplukkede løpesokker for ultraløpere. Første limited drop
+                fra Langeløp – bestill nå og betal enkelt via Vipps.
               </p>
             </div>
           </div>

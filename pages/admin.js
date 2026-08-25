@@ -4,6 +4,16 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
+    title: "SEO på shop-siden",
+    items: [
+      "Shop-siden hadde ingen egne meta-tagger — arvet forsidens tittel/beskrivelse om ultraløp, ikke sokker",
+      "Lagt til egen tittel, meta-beskrivelse, canonical, Open Graph og Twitter-kort for /shop",
+      "Lagt til schema.org Product-markup (pris, valuta, lagerstatus) for rikere Google-treff",
+      "Justert H1 og ingress til å nevne «løpesokker» naturlig for bedre relevans på søk",
+    ],
+  },
+  {
+    date: "2026-08-24",
     title: "Daglig rapport: manglet kommentarer + manuell test-knapp",
     items: [
       "Den daglige rapport-eposten dekket aldri løpskommentarer eller artikkelkommentarer — lagt til som egne seksjoner",
