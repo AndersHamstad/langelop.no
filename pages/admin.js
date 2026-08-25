@@ -4,12 +4,12 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
-    title: "Oppdateringer-fane: strukturer ChatGPT-digest med Claude",
+    title: "Oppdateringer-fane: strukturer ChatGPT-digest med Gemini",
     items: [
       "Ny fane i admin: lim inn ChatGPT sin oppdatering (resultater, nye løp, påmeldingsåpninger) og få den strukturert automatisk",
-      "Ny tabell digest_suggestions + API-endepunkt /api/admin/digest-parse som kaller Claude (Anthropic API) for å tolke teksten og matche mot eksisterende løp",
+      "Ny tabell digest_suggestions + API-endepunkt /api/admin/digest-parse som kaller Google Gemini (gratisnivå) for å tolke teksten og matche mot eksisterende løp",
       "Godkjenn/avvis per forslag — resultater går til race_results, korrigeringer patcher løpet direkte, nye løp havner i den eksisterende race_submissions-køen",
-      "Krever ANTHROPIC_API_KEY som ny miljøvariabel i Vercel",
+      "Krever GEMINI_API_KEY som ny miljøvariabel i Vercel",
     ],
   },
   {
@@ -1302,7 +1302,7 @@ function DigestTab({ adminPw }) {
         <h2 className="text-xl font-bold text-gray-900 mb-2">Lim inn oppdatering</h2>
         <p className="text-sm text-gray-500 mb-3">
           Lim inn teksten fra ChatGPT (resultater, nye løp, påmeldingsåpninger, korrigeringer).
-          Claude strukturerer den og foreslår endringer under — ingenting går live før du godkjenner hvert forslag.
+          Den blir automatisk strukturert og du får forslag til endringer under — ingenting går live før du godkjenner hvert forslag.
         </p>
         <textarea
           value={text}

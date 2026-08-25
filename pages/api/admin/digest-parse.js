@@ -65,8 +65,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Lim inn tekst fra oppdateringen først" });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: "ANTHROPIC_API_KEY mangler i miljøvariabler" });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY mangler i miljøvariabler" });
   }
 
   const { data: races } = await supabase
@@ -83,32 +83,30 @@ export default async function handler(req, res) {
 
   let aiResponse;
   try {
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
-      }),
-    });
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: "user", parts: [{ text: userMessage }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+      }
+    );
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      return res.status(502).json({ error: `Anthropic API feilet: ${errText.slice(0, 300)}` });
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      return res.status(502).json({ error: `Gemini API feilet: ${errText.slice(0, 300)}` });
     }
 
-    const json = await anthropicRes.json();
-    let raw = json.content?.[0]?.text || "";
+    const json = await geminiRes.json();
+    let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
     raw = raw.trim().replace(/^```(json)?/i, "").replace(/```$/, "").trim();
     aiResponse = JSON.parse(raw);
   } catch (err) {
-    return res.status(500).json({ error: "Klarte ikke tolke svaret fra Claude: " + err.message });
+    return res.status(500).json({ error: "Klarte ikke tolke svaret fra Gemini: " + err.message });
   }
 
   const rows = [];
