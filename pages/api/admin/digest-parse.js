@@ -81,8 +81,7 @@ export default async function handler(req, res) {
 
   const userMessage = `Eksisterende løp i databasen (slug | navn | dato):\n${raceList}\n\n---\n\nOppdateringstekst å strukturere:\n\n${text}`;
 
-  let aiResponse;
-  try {
+  async function callGemini() {
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -95,13 +94,37 @@ export default async function handler(req, res) {
         }),
       }
     );
-
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      return res.status(502).json({ error: `Gemini API feilet: ${errText.slice(0, 300)}` });
+      const err = new Error(errText);
+      err.status = geminiRes.status;
+      throw err;
+    }
+    return geminiRes.json();
+  }
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  let aiResponse;
+  try {
+    let json;
+    const delays = [0, 1500, 4000]; // 3 forsøk: umiddelbart, så 1.5s, så 4s
+    let lastErr;
+    for (const delay of delays) {
+      if (delay) await sleep(delay);
+      try {
+        json = await callGemini();
+        lastErr = null;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (err.status !== 503) break; // bare retry ved "overbelastet"
+      }
+    }
+    if (lastErr) {
+      return res.status(502).json({ error: `Gemini API feilet (etter ${delays.length} forsøk): ${String(lastErr.message).slice(0, 300)}` });
     }
 
-    const json = await geminiRes.json();
     let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
     raw = raw.trim().replace(/^```(json)?/i, "").replace(/```$/, "").trim();
     aiResponse = JSON.parse(raw);
