@@ -3,6 +3,16 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-08-26",
+    title: "Fiks matching i Oppdateringer-fanen",
+    items: [
+      "«Nytt løp»-skjemaet manglet matched_slug-felt, så alt havnet der ble automatisk umatchet — selv løp som faktisk finnes i databasen",
+      "Løp som allerede finnes klassifiseres nå som oppdatering (dato/status patches løpet direkte) i stedet for nytt løp — matcher hvordan tilbakevendende løp faktisk lagres (én rad, dato oppdateres årlig)",
+      "Lagt til et kode-side sikkerhetsnett som selv sjekker løpsnavn mot databasen, uavhengig av hva Gemini svarer",
+      "Gamle feilklassifiserte forslag: avvis dem og lim inn samme tekst på nytt for riktig kategorisering",
+    ],
+  },
+  {
     date: "2026-08-24",
     title: "Oppdateringer-fane: strukturer ChatGPT-digest med Gemini",
     items: [

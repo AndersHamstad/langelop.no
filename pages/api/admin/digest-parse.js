@@ -28,14 +28,19 @@ Svar KUN med gyldig JSON, ingen markdown-fences, ingen forklaringstekst. Bruk n�
     {
       "race_name": "string",
       "matched_slug": "string eller null",
-      "summary": "kort norsk oppsummering av hva som er endret/nytt, f.eks. 'Distanse korrigert fra 57 til 59 km'",
-      "fields": { "description": "string" } ,
+      "summary": "kort norsk oppsummering av hva som er endret/nytt, f.eks. 'Distanse korrigert fra 57 til 59 km' eller 'Påmelding åpner 1. september 2026 for 2027-utgaven'",
+      "fields": {
+        "date": "YYYY-MM-DD eller utelatt hvis dato ikke skal endres",
+        "status_note": "en av: '', 'Utsolgt', 'Få plasser igjen', 'Avlyst', 'Utsatt' — kun hvis relevant, ellers utelatt",
+        "description": "string, kun hvis noe fritekst bør legges til/endres, ellers utelatt"
+      },
       "source_url": "string eller null"
     }
   ],
   "new_races": [
     {
       "race_name": "string",
+      "matched_slug": "string eller null — sett KUN til null hvis løpet garantert ikke finnes i løpslisten",
       "date": "YYYY-MM-DD eller null hvis ukjent",
       "location": "string eller null",
       "region": "string eller null",
@@ -48,9 +53,9 @@ Svar KUN med gyldig JSON, ingen markdown-fences, ingen forklaringstekst. Bruk n�
 
 Regler:
 - "results" er kun for løp som allerede er avholdt med et faktisk resultat (vinnertider).
-- "race_updates" er korrigeringer/tillegg til løp som allerede finnes i databaselisten (matched_slug skal helst settes).
-- "new_races" er løp som IKKE finnes i databaselisten (fremtidige utgaver, påmeldingsåpning for et løp uten treff i listen).
-- Vær konservativ med matched_slug — sett null hvis du er usikker, heller enn å gjette feil.
+- VIKTIG om matching: hvert løp i databasen har ÉN rad som gjenbrukes år etter år — datoen oppdateres til neste utgave. Et løp som allerede finnes i løpslisten skal derfor ALLTID havne i "race_updates" (med oppdatert dato/status), ALDRI i "new_races" — selv om teksten omtaler en fremtidig utgave, påmeldingsåpning eller "2027-utgave". "new_races" er UTELUKKENDE for løp som garantert ikke finnes i løpslisten i det hele tatt.
+- Sjekk race_name grundig mot samtlige rader i løpslisten — se bort fra små forskjeller i skrivemåte, mellomrom, år eller om distanse er inkludert i navnet. Match på beste skjønn, men sett matched_slug til null hvis du er reelt usikker.
+- "Utsolgt etter X dager/påmeldte" -> sett fields.status_note = "Utsolgt". "Påmelding åpner [dato]" er ren informasjon -> ikke sett status_note for det alene.
 - Tider skal normaliseres til format H:MM:SS (f.eks. "11.33.14" -> "11:33:14").
 - Fjern tomme lister hvis ingen elementer av den typen finnes.`;
 
@@ -166,7 +171,34 @@ export default async function handler(req, res) {
     });
   }
 
+  // Sikkerhetsnett: sjekk selv om "nytt løp" faktisk matcher et eksisterende løp,
+  // uavhengig av hva modellen svarte — new_races-skjemaet har historisk manglet
+  // matched_slug, og modellen kan uansett bomme på klassifiseringen.
+  const normalizeName = (s) =>
+    (s || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim();
+  const raceByNormName = new Map((races || []).map((r) => [normalizeName(r.name), r.slug]));
+
   for (const n of aiResponse.new_races || []) {
+    const selfMatchedSlug = n.matched_slug || raceByNormName.get(normalizeName(n.race_name)) || null;
+
+    if (selfMatchedSlug) {
+      // Finnes allerede i databasen — behandle som oppdatering, ikke nytt løp
+      rows.push({
+        type: "race_update",
+        race_slug: selfMatchedSlug,
+        race_name: n.race_name,
+        summary: n.summary,
+        fields: { date: n.date || undefined },
+        source_url: n.source_url || null,
+        raw_snippet: text.slice(0, 2000),
+      });
+      continue;
+    }
+
     rows.push({
       type: "new_race",
       race_slug: null,
