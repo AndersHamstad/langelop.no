@@ -81,9 +81,9 @@ export default async function handler(req, res) {
 
   const userMessage = `Eksisterende løp i databasen (slug | navn | dato):\n${raceList}\n\n---\n\nOppdateringstekst å strukturere:\n\n${text}`;
 
-  async function callGemini() {
+  async function callGemini(model) {
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -105,24 +105,27 @@ export default async function handler(req, res) {
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+  // gemini-flash-latest har vist seg konsekvent overbelastet på gratisnivået.
+  // Prøv flere konkrete modeller på rad i stedet for å gjenta samme overbelastede.
+  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+
   let aiResponse;
   try {
     let json;
-    const delays = [0, 1500, 4000]; // 3 forsøk: umiddelbart, så 1.5s, så 4s
     let lastErr;
-    for (const delay of delays) {
-      if (delay) await sleep(delay);
+    for (let i = 0; i < MODELS.length; i++) {
+      if (i > 0) await sleep(800);
       try {
-        json = await callGemini();
+        json = await callGemini(MODELS[i]);
         lastErr = null;
         break;
       } catch (err) {
         lastErr = err;
-        if (err.status !== 503) break; // bare retry ved "overbelastet"
+        if (err.status !== 503) break; // bare prøv neste modell ved "overbelastet"
       }
     }
     if (lastErr) {
-      return res.status(502).json({ error: `Gemini API feilet (etter ${delays.length} forsøk): ${String(lastErr.message).slice(0, 300)}` });
+      return res.status(502).json({ error: `Gemini API feilet (prøvde ${MODELS.join(", ")}): ${String(lastErr.message).slice(0, 300)}` });
     }
 
     let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
