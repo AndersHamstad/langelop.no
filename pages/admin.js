@@ -4,14 +4,6 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-24",
-    title: "Forsidewidget: Siste resultater",
-    items: [
-      "Ny stripe på forsiden («Siste resultater») rett under «Neste to uker», med vinnere fra de 8 nyeste løpene som har registrerte resultater",
-      "Henter automatisk data fra race_results — populeres nå fortløpende via Oppdateringer-fanen",
-    ],
-  },
-  {
-    date: "2026-08-24",
     title: "Oppdateringer-fane: strukturer ChatGPT-digest med Gemini",
     items: [
       "Ny fane i admin: lim inn ChatGPT sin oppdatering (resultater, nye løp, påmeldingsåpninger) og få den strukturert automatisk",
