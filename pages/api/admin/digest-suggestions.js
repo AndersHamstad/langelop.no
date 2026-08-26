@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const RACE_UPDATE_ALLOWED = [
-  "name", "date", "description", "image_url", "url", "status_note", "location", "region",
+  "name", "date", "description", "image_url", "url", "status_note", "location", "region", "registration_opens_at",
 ];
 
 function timeToSeconds(t) {

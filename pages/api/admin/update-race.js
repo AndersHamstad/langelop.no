@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   const { slug, ...fields } = req.body;
   if (!slug) return res.status(400).json({ error: "slug mangler" });
 
-  const allowed = ["name", "date", "description", "image_url", "url", "status_note", "location", "region", "latitude", "longitude"];
+  const allowed = ["name", "date", "description", "image_url", "url", "status_note", "location", "region", "latitude", "longitude", "registration_opens_at"];
   const update = Object.fromEntries(Object.entries(fields).filter(([k]) => allowed.includes(k)));
 
   const { error } = await supabase.from("races").update(update).eq("slug", slug);

@@ -32,7 +32,8 @@ Svar KUN med gyldig JSON, ingen markdown-fences, ingen forklaringstekst. Bruk n�
       "fields": {
         "date": "YYYY-MM-DD eller utelatt hvis dato ikke skal endres",
         "status_note": "en av: '', 'Utsolgt', 'Få plasser igjen', 'Avlyst', 'Utsatt' — kun hvis relevant, ellers utelatt",
-        "description": "string, kun hvis noe fritekst bør legges til/endres, ellers utelatt"
+        "registration_opens_at": "YYYY-MM-DD — sett denne når teksten sier 'påmelding åpner [dato]', ellers utelatt",
+        "description": "string, kun for annen fritekst-info (f.eks. ny distanse lagt til) som ikke passer i et annet felt, ellers utelatt"
       },
       "source_url": "string eller null"
     }
@@ -55,7 +56,7 @@ Regler:
 - "results" er kun for løp som allerede er avholdt med et faktisk resultat (vinnertider).
 - VIKTIG om matching: hvert løp i databasen har ÉN rad som gjenbrukes år etter år — datoen oppdateres til neste utgave. Et løp som allerede finnes i løpslisten skal derfor ALLTID havne i "race_updates" (med oppdatert dato/status), ALDRI i "new_races" — selv om teksten omtaler en fremtidig utgave, påmeldingsåpning eller "2027-utgave". "new_races" er UTELUKKENDE for løp som garantert ikke finnes i løpslisten i det hele tatt.
 - Sjekk race_name grundig mot samtlige rader i løpslisten — se bort fra små forskjeller i skrivemåte, mellomrom, år eller om distanse er inkludert i navnet. Match på beste skjønn, men sett matched_slug til null hvis du er reelt usikker.
-- "Utsolgt etter X dager/påmeldte" -> sett fields.status_note = "Utsolgt". "Påmelding åpner [dato]" er ren informasjon -> ikke sett status_note for det alene.
+- "Utsolgt etter X dager/påmeldte" -> sett fields.status_note = "Utsolgt". "Påmelding åpner [dato]" -> sett fields.registration_opens_at til datoen, ikke status_note.
 - VIKTIG om winners.position: dette skal være løperens FAKTISKE totalplassering i løpet (blant alle deltakere, uansett kjønn), IKKE bare "vinner av sin kjønnsklasse". Sett position KUN når teksten eksplisitt oppgir et tall (f.eks. "nr. 6 totalt", "3. plass totalt"), eller når personen eksplisitt er "totalvinner"/vinner av hele løpet (da position = 1). En kvinnelig eller mannlig klassevinner uten eksplisitt totalplassering i teksten er IKKE nødvendigvis nr. 1 eller 2 totalt — sett position til null for dem. Ikke gjett.
 - Tider skal normaliseres til format H:MM:SS (f.eks. "11.33.14" -> "11:33:14").
 - Fjern tomme lister hvis ingen elementer av den typen finnes.`;

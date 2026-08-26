@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "«Påmelding åpner»-felt + «For arrangører» i toppmenyen",
+    items: [
+      "Nytt felt registration_opens_at på løp — eget felt i RaceEditor, badge på løpssiden når datoen er i fremtiden",
+      "Oppdateringer-fanen setter nå dette feltet direkte i stedet for å skrive det inn i beskrivelsen som fritekst",
+      "«For arrangører» er nå en synlig lenke i toppmenyen (var kun i footeren før)",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Hindre at oppdateringer overskriver eksisterende løpsbeskrivelse",
     items: [
       "En race_update-godkjenning kunne blindt erstatte hele beskrivelsen på løpssiden — modellen ser aldri hele den eksisterende teksten når den foreslår en oppdatering",
@@ -1482,6 +1491,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
     status_note: race.status_note || "",
     description: race.description || "",
     image_url: race.image_url || "",
+    registration_opens_at: race.registration_opens_at || "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1591,6 +1601,13 @@ function RaceEditor({ race, adminPw, onSaved }) {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Påmelding åpner</label>
+          <input type="date" value={form.registration_opens_at} onChange={set("registration_opens_at")} className={inputCls} />
         </div>
       </div>
 

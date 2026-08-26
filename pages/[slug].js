@@ -463,6 +463,11 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
             <p className="mt-2 text-white/75 text-base md:text-lg">
               {formatDate(race.date)} · {race.location}
             </p>
+            {race.registration_opens_at && new Date(race.registration_opens_at) > new Date() && (
+              <span className="inline-flex items-center gap-1.5 mt-3 bg-amber-400 text-amber-950 text-xs font-semibold px-3 py-1.5 rounded-full">
+                📅 Påmelding åpner {formatDate(race.registration_opens_at)}
+              </span>
+            )}
           </div>
         </div>
       </div>

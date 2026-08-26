@@ -23,6 +23,15 @@ export default function TopNavPill() {
       >
         Shop
       </Link>
+
+      <span className="text-white/40 mx-1 text-xs md:text-base">•</span>
+
+      <Link
+        href="/for-arrangorer"
+        className="px-1 text-sm md:text-base text-white font-medium hover:text-white"
+      >
+        For arrangører
+      </Link>
     </div>
   );
 }
