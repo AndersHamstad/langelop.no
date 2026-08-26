@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Vis hvilke felt som faktisk endres i Oppdateringer-fanen",
+    items: [
+      "Forslagskortene viste kun en oppsummeringstekst — umulig å se om f.eks. dato faktisk ville blitt oppdatert sammen med en statusendring, uten å godkjenne blindt",
+      "Kortene viser nå konkret hvilke felt som patches (dato, status, påmeldingsdato) eller hvilke vinnere/tider som lagres, før du godkjenner",
+      "Presisert i prompten: en statusnyhet om en fremtidig utgave (f.eks. «utsolgt for 2027-utgaven») skal alltid sette dato til den utgaven også, ikke bare status",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "«Påmelding åpner»-felt + «For arrangører» i toppmenyen",
     items: [
       "Nytt felt registration_opens_at på løp — eget felt i RaceEditor, badge på løpssiden når datoen er i fremtiden",
@@ -1389,6 +1398,45 @@ function DigestTab({ adminPw }) {
                   )}
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{s.summary}</p>
+
+                {/* Vis nøyaktig hva som blir endret, slik at det kan verifiseres før godkjenning */}
+                {s.type === "race_update" && s.fields && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {s.fields.date && (
+                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                        dato → {s.fields.date}
+                      </span>
+                    )}
+                    {s.fields.status_note && (
+                      <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-2.5 py-1">
+                        status → {s.fields.status_note}
+                      </span>
+                    )}
+                    {s.fields.registration_opens_at && (
+                      <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1">
+                        påmelding åpner → {s.fields.registration_opens_at}
+                      </span>
+                    )}
+                    {s.fields.description && (
+                      <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                        + tillegg i beskrivelse
+                      </span>
+                    )}
+                    {!s.fields.date && !s.fields.status_note && !s.fields.registration_opens_at && !s.fields.description && (
+                      <span className="text-xs text-amber-600">Ingen felt å endre funnet — trygt å avvise</span>
+                    )}
+                  </div>
+                )}
+                {s.type === "result" && s.fields?.winners && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {s.fields.winners.map((w, i) => (
+                      <span key={i} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                        {w.name} · {w.time}{w.position ? ` · plass ${w.position}` : " · plass ukjent"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {s.source_url && (
                   <a href={s.source_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
                     Kilde ↗

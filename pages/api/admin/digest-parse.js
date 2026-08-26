@@ -30,7 +30,7 @@ Svar KUN med gyldig JSON, ingen markdown-fences, ingen forklaringstekst. Bruk n�
       "matched_slug": "string eller null",
       "summary": "kort norsk oppsummering av hva som er endret/nytt, f.eks. 'Distanse korrigert fra 57 til 59 km' eller 'Påmelding åpner 1. september 2026 for 2027-utgaven'",
       "fields": {
-        "date": "YYYY-MM-DD eller utelatt hvis dato ikke skal endres",
+        "date": "YYYY-MM-DD — SKAL settes til datoen for utgaven nyheten gjelder (f.eks. 2027-utgaven), selv om nyheten primært handler om noe annet (status, påmelding). Utelat KUN hvis teksten ikke nevner noen dato for løpet i det hele tatt.",
         "status_note": "en av: '', 'Utsolgt', 'Få plasser igjen', 'Avlyst', 'Utsatt' — kun hvis relevant, ellers utelatt",
         "registration_opens_at": "YYYY-MM-DD — sett denne når teksten sier 'påmelding åpner [dato]', ellers utelatt",
         "description": "string, kun for annen fritekst-info (f.eks. ny distanse lagt til) som ikke passer i et annet felt, ellers utelatt"
@@ -57,6 +57,7 @@ Regler:
 - VIKTIG om matching: hvert løp i databasen har ÉN rad som gjenbrukes år etter år — datoen oppdateres til neste utgave. Et løp som allerede finnes i løpslisten skal derfor ALLTID havne i "race_updates" (med oppdatert dato/status), ALDRI i "new_races" — selv om teksten omtaler en fremtidig utgave, påmeldingsåpning eller "2027-utgave". "new_races" er UTELUKKENDE for løp som garantert ikke finnes i løpslisten i det hele tatt.
 - Sjekk race_name grundig mot samtlige rader i løpslisten — se bort fra små forskjeller i skrivemåte, mellomrom, år eller om distanse er inkludert i navnet. Match på beste skjønn, men sett matched_slug til null hvis du er reelt usikker.
 - "Utsolgt etter X dager/påmeldte" -> sett fields.status_note = "Utsolgt". "Påmelding åpner [dato]" -> sett fields.registration_opens_at til datoen, ikke status_note.
+- Når en nyhet gjelder en spesifikk fremtidig utgave (f.eks. "2027-utgaven"), skal fields.date ALLTID settes til den utgavens dato — selv om selve nyheten handler om status/påmelding, ikke datoen. Løpet skal ikke få en oppdatert status uten at datoen også følger med til samme utgave.
 - VIKTIG om winners.position: dette skal være løperens FAKTISKE totalplassering i løpet (blant alle deltakere, uansett kjønn), IKKE bare "vinner av sin kjønnsklasse". Sett position KUN når teksten eksplisitt oppgir et tall (f.eks. "nr. 6 totalt", "3. plass totalt"), eller når personen eksplisitt er "totalvinner"/vinner av hele løpet (da position = 1). En kvinnelig eller mannlig klassevinner uten eksplisitt totalplassering i teksten er IKKE nødvendigvis nr. 1 eller 2 totalt — sett position til null for dem. Ikke gjett.
 - Tider skal normaliseres til format H:MM:SS (f.eks. "11.33.14" -> "11:33:14").
 - Fjern tomme lister hvis ingen elementer av den typen finnes.`;
