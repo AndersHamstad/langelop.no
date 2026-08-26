@@ -105,27 +105,31 @@ export default async function handler(req, res) {
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  // gemini-flash-latest har vist seg konsekvent overbelastet på gratisnivået.
-  // Prøv flere konkrete modeller på rad i stedet for å gjenta samme overbelastede.
-  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+  // gemini-2.5-flash er faset ut for nye brukere (Google peker til gemini-3.6-flash),
+  // og gemini-flash-latest har vist seg periodevis overbelastet. Prøv flere modeller
+  // på rad — både ved 503 (overbelastet) og 404 (modell finnes ikke/er faset ut).
+  const MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+  const RETRYABLE = [404, 503];
 
   let aiResponse;
   try {
     let json;
     let lastErr;
+    const tried = [];
     for (let i = 0; i < MODELS.length; i++) {
       if (i > 0) await sleep(800);
+      tried.push(MODELS[i]);
       try {
         json = await callGemini(MODELS[i]);
         lastErr = null;
         break;
       } catch (err) {
         lastErr = err;
-        if (err.status !== 503) break; // bare prøv neste modell ved "overbelastet"
+        if (!RETRYABLE.includes(err.status)) break; // fatal feil (f.eks. 400/401/403) hjelper ikke å bytte modell
       }
     }
     if (lastErr) {
-      return res.status(502).json({ error: `Gemini API feilet (prøvde ${MODELS.join(", ")}): ${String(lastErr.message).slice(0, 300)}` });
+      return res.status(502).json({ error: `Gemini API feilet (prøvde ${tried.join(", ")}): ${String(lastErr.message).slice(0, 300)}` });
     }
 
     let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
