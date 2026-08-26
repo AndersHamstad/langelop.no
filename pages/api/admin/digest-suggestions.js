@@ -60,17 +60,54 @@ export default async function handler(req, res) {
       }
       const { date, distance_km, winners } = suggestion.fields || {};
       const year = date ? parseInt(date.slice(0, 4), 10) : null;
-      const rows = (winners || []).map((w) => ({
+
+      // race_results har en unik-constraint på (race_id, year, position). Digest-teksten
+      // oppgir nesten aldri faktisk overall-plassering, kun kjønnskategori-vinner — å anta
+      // position=1 for begge (eller gjette utifra tid) kolliderer, og kan i tillegg påstå en
+      // feil offisiell plassering (kategorivinner ≠ nødvendigvis nr. 2 totalt). Vi setter derfor
+      // kun position når teksten eksplisitt oppgir det (f.eks. "nr. 6 totalt") — ellers null,
+      // som Postgres tillater flere av under samme unik-constraint.
+      const { data: existingRows } = await supabase
+        .from("race_results")
+        .select("position")
+        .eq("race_id", suggestion.race_slug)
+        .eq("year", year);
+      const usedPositions = new Set((existingRows || []).map((r) => r.position).filter((p) => p != null));
+
+      const claim = (preferred) => {
+        let pos = preferred;
+        while (usedPositions.has(pos)) pos++;
+        usedPositions.add(pos);
+        return pos;
+      };
+
+      const withTimes = (winners || []).map((w) => ({ ...w, time_seconds: timeToSeconds(w.time) }));
+
+      // Den raskeste av de rapporterte "vinnerne" for løpet ER den faktiske
+      // totalvinneren (det er derfor de står i en vinner-liste) — trygt å sette
+      // position=1 for denne ene, med mindre noen allerede har eksplisitt position.
+      // De øvrige (kategorivinnere) sin faktiske totalplassering er ukjent -> null.
+      if (!withTimes.some((w) => w.position)) {
+        const fastest = withTimes.reduce((best, w) => {
+          if (w.time_seconds == null) return best;
+          if (!best || w.time_seconds < best.time_seconds) return w;
+          return best;
+        }, null);
+        if (fastest) fastest.position = 1;
+      }
+
+      const insertRows = withTimes.map((w) => ({
         race_id: suggestion.race_slug,
         year,
         distance_km: distance_km || null,
-        position: w.position || 1,
+        position: w.position ? claim(w.position) : null,
         name: w.name,
-        time_seconds: timeToSeconds(w.time),
+        time_seconds: w.time_seconds,
         gender: w.gender || null,
       }));
-      if (rows.length > 0) {
-        const { error } = await supabase.from("race_results").insert(rows);
+
+      if (insertRows.length > 0) {
+        const { error } = await supabase.from("race_results").insert(insertRows);
         if (error) return res.status(500).json({ error: error.message });
         try {
           await res.revalidate(`/${suggestion.race_slug}`);

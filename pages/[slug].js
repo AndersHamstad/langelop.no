@@ -577,14 +577,14 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                         r.position === 2 ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-gray-800' :
                         r.position === 3 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-950' :
                         'bg-gray-100 text-gray-700';
-                      const isTop3 = r.position <= 3;
+                      const isTop3 = r.position != null && r.position <= 3;
 
                       return (
                         <div key={r.id}>
                           <div className={`flex items-center justify-between gap-4 py-3 ${isTop3 ? 'px-3 rounded-xl bg-gray-50' : ''}`}>
                             <div className="flex items-center gap-3 min-w-0">
                               <span className={`w-9 h-9 rounded-full text-sm font-semibold flex items-center justify-center shrink-0 shadow-sm ${medalClass}`}>
-                                {r.position}
+                                {r.position ?? '–'}
                               </span>
                               <p className={`truncate ${isTop3 ? 'text-base font-semibold text-gray-900' : 'text-sm font-medium text-gray-900'}`}>
                                 {r.name}
