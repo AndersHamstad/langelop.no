@@ -4,20 +4,18 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Fjernet resultat-ticker fra forsiden (foreløpig)",
+    items: [
+      "Den rullerende ticker-stripen øverst på forsiden er tatt bort igjen — datainnhentingen og komponenten kan gjenbrukes senere",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Fiks krasj ved godkjenning av resultater (duplicate key)",
     items: [
       "race_results har unik-constraint på (race_id, year, position) — å sette position=1 for både mannlig og kvinnelig vinner kolliderte alltid",
       "Kjønnskategori-vinner er ikke nødvendigvis nr. 2 totalt, så vi gjetter ikke lenger plassering — kun eksplisitt oppgitt totalplassering (f.eks. «nr. 6 totalt») eller den reelt raskeste i vinner-listen får en position, resten lagres som null",
       "Rettet en liten visningsbug på løpssiden hvor null-plassering ble feilaktig stylet som topp-3 (JS-coercion: null <= 3)",
-    ],
-  },
-  {
-    date: "2026-08-26",
-    title: "Resultat-ticker på forsiden",
-    items: [
-      "Smal, mørk rullerende stripe øverst på forsiden med de nyeste løpsresultatene (navn, tid), lenket til løpssiden",
-      "Pauser ved hover, respekterer prefers-reduced-motion",
-      "Erstatter det tidligere kort-baserte forsøket som ikke traff visuelt",
     ],
   },
   {
