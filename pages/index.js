@@ -43,6 +43,14 @@ const formatShortDate = (dateString) => {
   }
 };
 
+const formatResultTime = (seconds) => {
+  if (!seconds) return '';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
 // Distance quick-filter presets
 const DISTANCE_PRESETS = [
   { label: 'Alle', min: 0, max: 200 },
@@ -59,13 +67,45 @@ export async function getStaticProps() {
     console.error('Supabase fetch error:', error);
   }
 
+  // Siste resultater til forsidewidget: vinnere (posisjon 1) fra de nyeste løpene
+  const { data: winnerResults } = await supabase
+    .from('race_results')
+    .select('race_id, name, time_seconds, gender, distance_km')
+    .eq('position', 1)
+    .order('year', { ascending: false })
+    .limit(60);
+
+  let latestResults = [];
+  if (winnerResults?.length > 0) {
+    const raceIds = [...new Set(winnerResults.map((r) => r.race_id))];
+    const { data: resultRaces } = await supabase
+      .from('races')
+      .select('slug, name, date')
+      .in('slug', raceIds);
+    const raceBySlug = Object.fromEntries((resultRaces || []).map((r) => [r.slug, r]));
+
+    const grouped = {};
+    for (const r of winnerResults) {
+      const race = raceBySlug[r.race_id];
+      if (!race?.date) continue;
+      if (!grouped[r.race_id]) {
+        grouped[r.race_id] = { slug: r.race_id, name: race.name, date: race.date, winners: [] };
+      }
+      grouped[r.race_id].winners.push({ name: r.name, time_seconds: r.time_seconds, gender: r.gender });
+    }
+
+    latestResults = Object.values(grouped)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 8);
+  }
+
   return {
-    props: { races: races || [], fetchError: error ? true : false },
+    props: { races: races || [], fetchError: error ? true : false, latestResults },
     revalidate: 60,
   };
 }
 
-export default function Home({ races, fetchError }) {
+export default function Home({ races, fetchError, latestResults }) {
   const [distanceRange, setDistanceRange] = useState([0, 200]);
   const [showCustomDistance, setShowCustomDistance] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -512,6 +552,34 @@ export default function Home({ races, fetchError }) {
                       · {race.location}
                     </p>
                   </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── "Siste resultater" ──────────────────────────────────────────────── */}
+      {latestResults?.length > 0 && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Siste resultater
+            </h2>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {latestResults.map((r) => (
+                <a
+                  key={r.slug}
+                  href={`/${r.slug}`}
+                  className="flex-shrink-0 bg-gray-50 rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-100 transition min-w-[220px]"
+                >
+                  <p className="text-xs font-semibold text-gray-900 truncate">{r.name}</p>
+                  <p className="text-[11px] text-gray-400 mb-1">{formatShortDate(r.date)}</p>
+                  {r.winners.map((w, i) => (
+                    <p key={i} className="text-[11px] text-gray-600 truncate">
+                      {w.name} <span className="text-gray-400">· {formatResultTime(w.time_seconds)}</span>
+                    </p>
+                  ))}
                 </a>
               ))}
             </div>
