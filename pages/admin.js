@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Hindre at oppdateringer overskriver eksisterende løpsbeskrivelse",
+    items: [
+      "En race_update-godkjenning kunne blindt erstatte hele beskrivelsen på løpssiden — modellen ser aldri hele den eksisterende teksten når den foreslår en oppdatering",
+      "description-felt legges nå til i eksisterende beskrivelse i stedet for å erstatte den",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Fjernet resultat-ticker fra forsiden (foreløpig)",
     items: [
       "Den rullerende ticker-stripen øverst på forsiden er tatt bort igjen — datainnhentingen og komponenten kan gjenbrukes senere",

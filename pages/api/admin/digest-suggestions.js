@@ -124,6 +124,20 @@ export default async function handler(req, res) {
       const patch = Object.fromEntries(
         Object.entries(suggestion.fields || {}).filter(([k, v]) => RACE_UPDATE_ALLOWED.includes(k) && v != null)
       );
+
+      // Modellen ser aldri den fulle eksisterende beskrivelsen når den foreslår en
+      // oppdatering, så et description-felt kan ikke settes direkte — det ville blindt
+      // overskrevet en beskrivelse noen har skrevet manuelt. Legg til i stedet.
+      if (patch.description) {
+        const { data: current } = await supabase
+          .from("races")
+          .select("description")
+          .eq("slug", suggestion.race_slug)
+          .single();
+        const existing = current?.description?.trim();
+        patch.description = existing ? `${existing}\n\n${patch.description}` : patch.description;
+      }
+
       if (Object.keys(patch).length > 0) {
         const { error } = await supabase.from("races").update(patch).eq("slug", suggestion.race_slug);
         if (error) return res.status(500).json({ error: error.message });
