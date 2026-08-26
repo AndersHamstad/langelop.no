@@ -72,6 +72,11 @@ export default async function handler(req, res) {
       if (rows.length > 0) {
         const { error } = await supabase.from("race_results").insert(rows);
         if (error) return res.status(500).json({ error: error.message });
+        try {
+          await res.revalidate(`/${suggestion.race_slug}`);
+        } catch (e) {
+          console.error("Revalidate feilet:", e);
+        }
       }
     }
 
