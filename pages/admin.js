@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Resultat-ticker på forsiden",
+    items: [
+      "Smal, mørk rullerende stripe øverst på forsiden med de nyeste løpsresultatene (navn, tid), lenket til løpssiden",
+      "Pauser ved hover, respekterer prefers-reduced-motion",
+      "Erstatter det tidligere kort-baserte forsøket som ikke traff visuelt",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Fiks matching i Oppdateringer-fanen",
     items: [
       "«Nytt løp»-skjemaet manglet matched_slug-felt, så alt havnet der ble automatisk umatchet — selv løp som faktisk finnes i databasen",
