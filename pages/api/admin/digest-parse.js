@@ -43,6 +43,8 @@ Svar KUN med gyldig JSON, ingen markdown-fences, ingen forklaringstekst. Bruk n�
       "race_name": "string",
       "matched_slug": "string eller null — sett KUN til null hvis løpet garantert ikke finnes i løpslisten",
       "date": "YYYY-MM-DD eller null hvis ukjent",
+      "registration_opens_at": "YYYY-MM-DD — sett når teksten sier 'påmelding åpner [dato]', ellers utelatt",
+      "status_note": "en av: '', 'Utsolgt', 'Få plasser igjen', 'Avlyst', 'Utsatt' — kun hvis relevant, ellers utelatt",
       "location": "string eller null",
       "region": "string eller null",
       "url": "string eller null",
@@ -56,8 +58,8 @@ Regler:
 - "results" er kun for løp som allerede er avholdt med et faktisk resultat (vinnertider).
 - VIKTIG om matching: hvert løp i databasen har ÉN rad som gjenbrukes år etter år — datoen oppdateres til neste utgave. Et løp som allerede finnes i løpslisten skal derfor ALLTID havne i "race_updates" (med oppdatert dato/status), ALDRI i "new_races" — selv om teksten omtaler en fremtidig utgave, påmeldingsåpning eller "2027-utgave". "new_races" er UTELUKKENDE for løp som garantert ikke finnes i løpslisten i det hele tatt.
 - Sjekk race_name grundig mot samtlige rader i løpslisten — se bort fra små forskjeller i skrivemåte, mellomrom, år eller om distanse er inkludert i navnet. Match på beste skjønn, men sett matched_slug til null hvis du er reelt usikker.
-- "Utsolgt etter X dager/påmeldte" -> sett fields.status_note = "Utsolgt". "Påmelding åpner [dato]" -> sett fields.registration_opens_at til datoen, ikke status_note.
-- Når en nyhet gjelder en spesifikk fremtidig utgave (f.eks. "2027-utgaven"), skal fields.date ALLTID settes til den utgavens dato — selv om selve nyheten handler om status/påmelding, ikke datoen. Løpet skal ikke få en oppdatert status uten at datoen også følger med til samme utgave.
+- "Utsolgt etter X dager/påmeldte" -> sett status_note = "Utsolgt". "Påmelding åpner [dato]" -> sett registration_opens_at til datoen, ikke status_note. Disse reglene gjelder likt for "race_updates".fields og for de tilsvarende feltene i "new_races" (siden et "nytt løp" kan vise seg å faktisk matche noe i databasen).
+- Når en nyhet gjelder en spesifikk fremtidig utgave (f.eks. "2027-utgaven"), skal date ALLTID settes til den utgavens dato — selv om selve nyheten handler om status/påmelding, ikke datoen. Dette gjelder for "race_updates".fields.date OG for "new_races".date.
 - VIKTIG om winners.position: dette skal være løperens FAKTISKE totalplassering i løpet (blant alle deltakere, uansett kjønn), IKKE bare "vinner av sin kjønnsklasse". Sett position KUN når teksten eksplisitt oppgir et tall (f.eks. "nr. 6 totalt", "3. plass totalt"), eller når personen eksplisitt er "totalvinner"/vinner av hele løpet (da position = 1). En kvinnelig eller mannlig klassevinner uten eksplisitt totalplassering i teksten er IKKE nødvendigvis nr. 1 eller 2 totalt — sett position til null for dem. Ikke gjett.
 - Tider skal normaliseres til format H:MM:SS (f.eks. "11.33.14" -> "11:33:14").
 - Fjern tomme lister hvis ingen elementer av den typen finnes.`;
@@ -189,13 +191,18 @@ export default async function handler(req, res) {
     const selfMatchedSlug = n.matched_slug || raceByNormName.get(normalizeName(n.race_name)) || null;
 
     if (selfMatchedSlug) {
-      // Finnes allerede i databasen — behandle som oppdatering, ikke nytt løp
+      // Finnes allerede i databasen — behandle som oppdatering, ikke nytt løp.
+      // Ta med alle relevante felt, ikke bare dato.
       rows.push({
         type: "race_update",
         race_slug: selfMatchedSlug,
         race_name: n.race_name,
         summary: n.summary,
-        fields: { date: n.date || undefined },
+        fields: {
+          date: n.date || undefined,
+          registration_opens_at: n.registration_opens_at || undefined,
+          status_note: n.status_note || undefined,
+        },
         source_url: n.source_url || null,
         raw_snippet: text.slice(0, 2000),
       });

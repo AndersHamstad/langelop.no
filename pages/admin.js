@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Fiks tapt påmeldingsdato ved omklassifisering til oppdatering",
+    items: [
+      "Når et «nytt løp»-forslag ble omklassifisert til oppdatering (fordi det faktisk matchet et løp i databasen), ble kun dato tatt med — registration_opens_at og status_note ble stille droppet",
+      "new_races-skjemaet manglet disse feltene helt; lagt til slik at all info fanges uansett hvilken kategori Gemini først plasserer nyheten i",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Vis hvilke felt som faktisk endres i Oppdateringer-fanen",
     items: [
       "Forslagskortene viste kun en oppsummeringstekst — umulig å se om f.eks. dato faktisk ville blitt oppdatert sammen med en statusendring, uten å godkjenne blindt",
