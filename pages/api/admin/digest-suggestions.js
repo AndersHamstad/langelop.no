@@ -138,15 +138,19 @@ export default async function handler(req, res) {
         patch.description = existing ? `${existing}\n\n${patch.description}` : patch.description;
       }
 
-      if (Object.keys(patch).length > 0) {
-        const { error } = await supabase.from("races").update(patch).eq("slug", suggestion.race_slug);
-        if (error) return res.status(500).json({ error: error.message });
-        try {
-          await res.revalidate(`/${suggestion.race_slug}`);
-          await res.revalidate("/");
-        } catch (e) {
-          console.error("Revalidate feilet:", e);
-        }
+      if (Object.keys(patch).length === 0) {
+        return res.status(400).json({
+          error: `Ingen gyldige felt å oppdatere (fields inneholdt: ${JSON.stringify(suggestion.fields)}). Avvis forslaget i stedet.`,
+        });
+      }
+
+      const { error } = await supabase.from("races").update(patch).eq("slug", suggestion.race_slug);
+      if (error) return res.status(500).json({ error: error.message });
+      try {
+        await res.revalidate(`/${suggestion.race_slug}`);
+        await res.revalidate("/");
+      } catch (e) {
+        console.error("Revalidate feilet:", e);
       }
     }
 

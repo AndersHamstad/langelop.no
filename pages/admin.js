@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Hindre stille no-op ved godkjenning uten feltdata",
+    items: [
+      "Godkjenning av en oppdatering med tomt fields-objekt gikk tidligere gjennom uten feilmelding — så ut som noe skjedde, men ingenting ble faktisk endret på løpet",
+      "Godkjenning feiler nå synlig med feilmelding hvis det ikke finnes gyldige felt å oppdatere",
+      "Forslagskort uten feltdata i det hele tatt viser nå en tydelig advarsel i stedet for å se tomme ut",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Fiks tapt påmeldingsdato ved omklassifisering til oppdatering",
     items: [
       "Når et «nytt løp»-forslag ble omklassifisert til oppdatering (fordi det faktisk matchet et løp i databasen), ble kun dato tatt med — registration_opens_at og status_note ble stille droppet",
@@ -1434,6 +1443,11 @@ function DigestTab({ adminPw }) {
                       <span className="text-xs text-amber-600">Ingen felt å endre funnet — trygt å avvise</span>
                     )}
                   </div>
+                )}
+                {s.type === "race_update" && !s.fields && (
+                  <p className="text-xs text-amber-600 mb-2">
+                    Mangler feltdata helt (fields er tomt) — trygt å avvise. Kan skje på forslag generert før en tidligere fiks.
+                  </p>
                 )}
                 {s.type === "result" && s.fields?.winners && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
