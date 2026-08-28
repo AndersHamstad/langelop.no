@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
+    title: "Forhåndsvisning for «Nytt løp»-kort",
+    items: [
+      "«Nytt løp»-forslag manglet feltvisning som de andre to typene har — la til dato/sted/region/url-chips",
+      "Forklarende tekst om at godkjenning skriver til race_submissions-køen, ikke direkte til nettsiden",
+    ],
+  },
+  {
+    date: "2026-08-26",
     title: "Hindre stille no-op ved godkjenning uten feltdata",
     items: [
       "Godkjenning av en oppdatering med tomt fields-objekt gikk tidligere gjennom uten feilmelding — så ut som noe skjedde, men ingenting ble faktisk endret på løpet",
@@ -1456,6 +1464,35 @@ function DigestTab({ adminPw }) {
                         {w.name} · {w.time}{w.position ? ` · plass ${w.position}` : " · plass ukjent"}
                       </span>
                     ))}
+                  </div>
+                )}
+                {s.type === "new_race" && (
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {s.fields?.date && (
+                        <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                          dato: {s.fields.date}
+                        </span>
+                      )}
+                      {s.fields?.location && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          sted: {s.fields.location}
+                        </span>
+                      )}
+                      {s.fields?.region && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          region: {s.fields.region}
+                        </span>
+                      )}
+                      {s.fields?.url && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          url: {s.fields.url}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Godkjenning skriver dette til race_submissions-køen (samme som kontaktskjemaet) — påvirker ikke selve nettsiden direkte.
+                    </p>
                   </div>
                 )}
 
