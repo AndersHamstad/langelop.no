@@ -8,6 +8,7 @@ const BASE_URL = 'https://www.langelop.no';
 const STATIC_PAGES = [
   { url: '/', priority: '1.0', changefreq: 'daily' },
   { url: '/artikler/liste', priority: '0.8', changefreq: 'weekly' },
+  { url: '/nyheter', priority: '0.7', changefreq: 'daily' },
   { url: '/om-oss', priority: '0.5', changefreq: 'monthly' },
   { url: '/shop', priority: '0.6', changefreq: 'weekly' },
 ];
