@@ -18,15 +18,6 @@ export default function TopNavPill() {
       <span className="text-white/40 mx-1 text-xs md:text-base">•</span>
 
       <Link
-        href="/nyheter"
-        className="px-1 text-sm md:text-base text-white font-medium hover:text-white"
-      >
-        Nyheter
-      </Link>
-
-      <span className="text-white/40 mx-1 text-xs md:text-base">•</span>
-
-      <Link
         href="/shop"
         className="px-1 text-sm md:text-base text-white font-medium hover:text-white"
       >

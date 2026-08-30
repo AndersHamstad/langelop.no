@@ -4,16 +4,6 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-08-26",
-    title: "Ny /nyheter-side: resultater og påmeldinger",
-    items: [
-      "Egen side med to faner: Resultater (nyeste løpsvinnere) og Påmeldinger (løp med registration_opens_at satt)",
-      "Erstatter den forkastede forsidetickeren — samme datalogikk, men på egen side i stedet for å konkurrere med forsiden",
-      "Påmeldinger-fanen viser kun publiserte løp (ikke ureviderte race_submissions), sortert på sist oppdatert",
-      "Lagt til i toppmenyen og sitemap.xml",
-    ],
-  },
-  {
-    date: "2026-08-26",
     title: "Forhåndsvisning for «Nytt løp»-kort",
     items: [
       "«Nytt løp»-forslag manglet feltvisning som de andre to typene har — la til dato/sted/region/url-chips",
