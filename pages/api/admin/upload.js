@@ -26,6 +26,11 @@ export default async function handler(req, res) {
   const path = `${Date.now()}.${ext}`;
   const buffer = fs.readFileSync(file.filepath);
 
+  const { data: existingBuckets } = await supabase.storage.listBuckets();
+  if (!existingBuckets?.some((b) => b.name === bucket)) {
+    await supabase.storage.createBucket(bucket, { public: true });
+  }
+
   const { error } = await supabase.storage.from(bucket).upload(path, buffer, {
     contentType: file.mimetype || "application/octet-stream",
     upsert: false,

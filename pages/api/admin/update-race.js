@@ -14,11 +14,20 @@ export default async function handler(req, res) {
   const { slug, ...fields } = req.body;
   if (!slug) return res.status(400).json({ error: "slug mangler" });
 
-  const allowed = ["name", "date", "description", "image_url", "url", "status_note", "location", "region", "latitude", "longitude"];
+  const allowed = ["name", "date", "description", "image_url", "url", "status_note", "location", "region", "latitude", "longitude", "registration_opens_at"];
   const update = Object.fromEntries(Object.entries(fields).filter(([k]) => allowed.includes(k)));
 
   const { error } = await supabase.from("races").update(update).eq("slug", slug);
   if (error) return res.status(500).json({ error: error.message });
+
+  if (slug !== "__ping__") {
+    try {
+      await res.revalidate(`/${slug}`);
+      await res.revalidate("/");
+    } catch (revalidateError) {
+      console.error("Revalidate feilet:", revalidateError);
+    }
+  }
 
   return res.status(200).json({ ok: true });
 }

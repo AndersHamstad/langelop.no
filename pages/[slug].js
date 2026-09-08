@@ -2,6 +2,7 @@
 import Head from 'next/head';
 import Script from 'next/script';
 import Link from 'next/link';
+import SmartImage from '../components/SmartImage';
 import { supabase } from '../lib/supabaseClient';
 import { buildRaceJsonLd } from '../lib/structuredData';
 import { useState, useRef, useEffect } from 'react';
@@ -225,10 +226,12 @@ function NearbyRaceCard({ race }) {
     <Link href={`/${race.slug}`}
       className="flex-shrink-0 w-56 sm:w-auto bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition group">
       <div className="relative h-24 bg-gray-100 overflow-hidden">
-        <img
+        <SmartImage
           src={race.image_url || '/fallback.jpg'}
           alt={race.name}
-          className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-300"
+          fill
+          sizes="(max-width: 640px) 224px, 200px"
+          className="object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-300"
         />
       </div>
       <div className="p-3">
@@ -432,8 +435,9 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
       {/* Hero */}
       <div className="relative w-full h-[42vh] md:h-[46vh] overflow-hidden bg-gray-900">
         {race.image_url ? (
-          <img src={race.image_url} alt={race.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-50 scale-105 blur-[1px]" />
+          <SmartImage src={race.image_url} alt={race.name} fill priority
+            sizes="100vw"
+            className="object-cover opacity-50 scale-105 blur-[1px]" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />
         )}
@@ -459,6 +463,11 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
             <p className="mt-2 text-white/75 text-base md:text-lg">
               {formatDate(race.date)} · {race.location}
             </p>
+            {race.registration_opens_at && new Date(race.registration_opens_at) > new Date() && (
+              <span className="inline-flex items-center gap-1.5 mt-3 bg-amber-400 text-amber-950 text-xs font-semibold px-3 py-1.5 rounded-full">
+                📅 Påmelding åpner {formatDate(race.registration_opens_at)}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -573,14 +582,14 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                         r.position === 2 ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-gray-800' :
                         r.position === 3 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-950' :
                         'bg-gray-100 text-gray-700';
-                      const isTop3 = r.position <= 3;
+                      const isTop3 = r.position != null && r.position <= 3;
 
                       return (
                         <div key={r.id}>
                           <div className={`flex items-center justify-between gap-4 py-3 ${isTop3 ? 'px-3 rounded-xl bg-gray-50' : ''}`}>
                             <div className="flex items-center gap-3 min-w-0">
                               <span className={`w-9 h-9 rounded-full text-sm font-semibold flex items-center justify-center shrink-0 shadow-sm ${medalClass}`}>
-                                {r.position}
+                                {r.position ?? '–'}
                               </span>
                               <p className={`truncate ${isTop3 ? 'text-base font-semibold text-gray-900' : 'text-sm font-medium text-gray-900'}`}>
                                 {r.name}

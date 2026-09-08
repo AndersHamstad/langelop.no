@@ -3,6 +3,146 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-08-26",
+    title: "Forhåndsvisning for «Nytt løp»-kort",
+    items: [
+      "«Nytt løp»-forslag manglet feltvisning som de andre to typene har — la til dato/sted/region/url-chips",
+      "Forklarende tekst om at godkjenning skriver til race_submissions-køen, ikke direkte til nettsiden",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Hindre stille no-op ved godkjenning uten feltdata",
+    items: [
+      "Godkjenning av en oppdatering med tomt fields-objekt gikk tidligere gjennom uten feilmelding — så ut som noe skjedde, men ingenting ble faktisk endret på løpet",
+      "Godkjenning feiler nå synlig med feilmelding hvis det ikke finnes gyldige felt å oppdatere",
+      "Forslagskort uten feltdata i det hele tatt viser nå en tydelig advarsel i stedet for å se tomme ut",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Fiks tapt påmeldingsdato ved omklassifisering til oppdatering",
+    items: [
+      "Når et «nytt løp»-forslag ble omklassifisert til oppdatering (fordi det faktisk matchet et løp i databasen), ble kun dato tatt med — registration_opens_at og status_note ble stille droppet",
+      "new_races-skjemaet manglet disse feltene helt; lagt til slik at all info fanges uansett hvilken kategori Gemini først plasserer nyheten i",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Vis hvilke felt som faktisk endres i Oppdateringer-fanen",
+    items: [
+      "Forslagskortene viste kun en oppsummeringstekst — umulig å se om f.eks. dato faktisk ville blitt oppdatert sammen med en statusendring, uten å godkjenne blindt",
+      "Kortene viser nå konkret hvilke felt som patches (dato, status, påmeldingsdato) eller hvilke vinnere/tider som lagres, før du godkjenner",
+      "Presisert i prompten: en statusnyhet om en fremtidig utgave (f.eks. «utsolgt for 2027-utgaven») skal alltid sette dato til den utgaven også, ikke bare status",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "«Påmelding åpner»-felt + «For arrangører» i toppmenyen",
+    items: [
+      "Nytt felt registration_opens_at på løp — eget felt i RaceEditor, badge på løpssiden når datoen er i fremtiden",
+      "Oppdateringer-fanen setter nå dette feltet direkte i stedet for å skrive det inn i beskrivelsen som fritekst",
+      "«For arrangører» er nå en synlig lenke i toppmenyen (var kun i footeren før)",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Hindre at oppdateringer overskriver eksisterende løpsbeskrivelse",
+    items: [
+      "En race_update-godkjenning kunne blindt erstatte hele beskrivelsen på løpssiden — modellen ser aldri hele den eksisterende teksten når den foreslår en oppdatering",
+      "description-felt legges nå til i eksisterende beskrivelse i stedet for å erstatte den",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Fjernet resultat-ticker fra forsiden (foreløpig)",
+    items: [
+      "Den rullerende ticker-stripen øverst på forsiden er tatt bort igjen — datainnhentingen og komponenten kan gjenbrukes senere",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Fiks krasj ved godkjenning av resultater (duplicate key)",
+    items: [
+      "race_results har unik-constraint på (race_id, year, position) — å sette position=1 for både mannlig og kvinnelig vinner kolliderte alltid",
+      "Kjønnskategori-vinner er ikke nødvendigvis nr. 2 totalt, så vi gjetter ikke lenger plassering — kun eksplisitt oppgitt totalplassering (f.eks. «nr. 6 totalt») eller den reelt raskeste i vinner-listen får en position, resten lagres som null",
+      "Rettet en liten visningsbug på løpssiden hvor null-plassering ble feilaktig stylet som topp-3 (JS-coercion: null <= 3)",
+    ],
+  },
+  {
+    date: "2026-08-26",
+    title: "Fiks matching i Oppdateringer-fanen",
+    items: [
+      "«Nytt løp»-skjemaet manglet matched_slug-felt, så alt havnet der ble automatisk umatchet — selv løp som faktisk finnes i databasen",
+      "Løp som allerede finnes klassifiseres nå som oppdatering (dato/status patches løpet direkte) i stedet for nytt løp — matcher hvordan tilbakevendende løp faktisk lagres (én rad, dato oppdateres årlig)",
+      "Lagt til et kode-side sikkerhetsnett som selv sjekker løpsnavn mot databasen, uavhengig av hva Gemini svarer",
+      "Gamle feilklassifiserte forslag: avvis dem og lim inn samme tekst på nytt for riktig kategorisering",
+    ],
+  },
+  {
+    date: "2026-08-24",
+    title: "Oppdateringer-fane: strukturer ChatGPT-digest med Gemini",
+    items: [
+      "Ny fane i admin: lim inn ChatGPT sin oppdatering (resultater, nye løp, påmeldingsåpninger) og få den strukturert automatisk",
+      "Ny tabell digest_suggestions + API-endepunkt /api/admin/digest-parse som kaller Google Gemini (gratisnivå) for å tolke teksten og matche mot eksisterende løp",
+      "Godkjenn/avvis per forslag — resultater går til race_results, korrigeringer patcher løpet direkte, nye løp havner i den eksisterende race_submissions-køen",
+      "Krever GEMINI_API_KEY som ny miljøvariabel i Vercel",
+    ],
+  },
+  {
+    date: "2026-08-24",
+    title: "SEO-opprydding: admin blokkert, manglende lang-attributt",
+    items: [
+      "Admin-panelet var verken blokkert i robots.txt eller merket noindex — kunne i teorien dukke opp i Google-søk",
+      "La til Disallow: /admin og /api/ i robots.txt, og noindex-meta på /admin",
+      "Nettstedet manglet pages/_document.js — <html> hadde ingen lang-attributt. La til lang=\"nb\"",
+    ],
+  },
+  {
+    date: "2026-08-24",
+    title: "SEO på shop-siden",
+    items: [
+      "Shop-siden hadde ingen egne meta-tagger — arvet forsidens tittel/beskrivelse om ultraløp, ikke sokker",
+      "Lagt til egen tittel, meta-beskrivelse, canonical, Open Graph og Twitter-kort for /shop",
+      "Lagt til schema.org Product-markup (pris, valuta, lagerstatus) for rikere Google-treff",
+      "Justert H1 og ingress til å nevne «løpesokker» naturlig for bedre relevans på søk",
+    ],
+  },
+  {
+    date: "2026-08-24",
+    title: "Daglig rapport: manglet kommentarer + manuell test-knapp",
+    items: [
+      "Den daglige rapport-eposten dekket aldri løpskommentarer eller artikkelkommentarer — lagt til som egne seksjoner",
+      "Ny «Send testrapport nå»-knapp i Dev-fanen (Systemsjekk) for å trigge rapporten manuelt og se om e-post faktisk sendes",
+      "Rapport-endepunktet godtar nå enten CRON_SECRET (Vercel Cron) eller admin-passord (manuell test)",
+    ],
+  },
+  {
+    date: "2026-08-24",
+    title: "Bildeoptimalisering (Supabase cached egress)",
+    items: [
+      "Ny SmartImage-komponent: bruker next/image kun for bilder vi selv eier (Supabase-lagring), vanlig <img> for alt annet",
+      "Løste Supabase «Cached Egress Exceeded»-varselet — egne bilder ble tidligere lastet i full oppløsning selv som små thumbnails",
+      "Løpsbilder hentes fra ~45 ulike arrangør-domener — for mange til å whiteliste enkeltvis, derfor fallback til <img> for eksterne kilder i stedet",
+      "Rettet en runde med ødelagte bilder på live-siden (400-feil) som oppsto da alle bilder først ble sendt via next/image uten at eksterne domener var whitelistet",
+    ],
+  },
+  {
+    date: "2026-07-28",
+    title: "Konsepter-fane og mobilvennlig admin",
+    items: [
+      "Konsepter-fane: kort for sokkekonsepter med status (idé/prøver/dialog/besluttet), leverandør, kontakt og notater",
+      "Bildeopplasting på konsepter (samme opplastingsknapp som løpsbilder)",
+      "Oppfølgingspåminnelse på konsepter — rød badge når fristen er i dag/passert",
+      "Egen leverandørliste (navn, kontakt, notater) i Konsepter-fanen",
+      "Adminpanelet er nå mobilvennlig — sidebar blir en skjul/vis-meny på små skjermer",
+      "Fant og fjernet en ekte Supabase service-role-nøkkel som lå committet i .env.local.example",
+      "Tilbud-fane: leverandørhenvendelser gruppert per konsept, med egen status (kontaktet/venter/tilbud mottatt/prøve/avslått/valgt) og pris/MOQ/leveringstid",
+      "Slo sammen Konsept- og Tilbud-fanen til én, med intern bryter og direkte «Se tilbud →»-lenke fra hvert konsept",
+      "Mulig å registrere sokkebestillinger manuelt i Shop-fanen, for salg utenfor nettsiden (f.eks. privat via Vipps)",
+    ],
+  },
+  {
     date: "2026-07-27",
     title: "Admin-panel",
     items: [
@@ -72,6 +212,27 @@ function DevTab({ adminPw }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [reportSending, setReportSending] = useState(false);
+  const [reportResult, setReportResult] = useState(null);
+
+  async function sendTestReport() {
+    setReportSending(true);
+    setReportResult(null);
+    try {
+      const res = await fetch("/api/cron/daily-report?force=1", {
+        headers: { "x-admin-password": adminPw },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReportResult({ ok: false, message: data.error || "Ukjent feil" });
+      } else {
+        setReportResult({ ok: true, message: `Sendt! ${data.total} hendelse(r) siste 24t.` });
+      }
+    } catch (err) {
+      setReportResult({ ok: false, message: err.message });
+    }
+    setReportSending(false);
+  }
 
   function loadTasks() {
     return fetch("/api/admin/dev-tasks", { headers: { "x-admin-password": adminPw } })
@@ -208,6 +369,29 @@ function DevTab({ adminPw }) {
 
   return (
     <div className="max-w-3xl space-y-10">
+      {/* Systemsjekk */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Systemsjekk</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="font-semibold text-sm text-gray-900">Daglig rapport (e-post)</p>
+            <p className="text-sm text-gray-500 mt-0.5">Trigger rapport-cronen manuelt for å teste at e-post faktisk går gjennom.</p>
+          </div>
+          <button
+            onClick={sendTestReport}
+            disabled={reportSending}
+            className="shrink-0 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {reportSending ? "Sender…" : "Send testrapport nå"}
+          </button>
+        </div>
+        {reportResult && (
+          <p className={`text-sm mt-2 ${reportResult.ok ? "text-green-600" : "text-red-600"}`}>
+            {reportResult.ok ? "✓ " : "✗ "}{reportResult.message}
+          </p>
+        )}
+      </div>
+
       {/* TODO */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -300,6 +484,1052 @@ function DevTab({ adminPw }) {
   );
 }
 
+const CONCEPT_STATUS = [
+  { value: "idea", label: "Idé", style: "bg-gray-50 text-gray-500 border-gray-200" },
+  { value: "samples", label: "Prøver bestilt", style: "bg-blue-50 text-blue-600 border-blue-200" },
+  { value: "dialogue", label: "I dialog", style: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  { value: "decided", label: "Besluttet", style: "bg-green-50 text-green-700 border-green-200" },
+];
+const CONCEPT_STATUS_MAP = Object.fromEntries(CONCEPT_STATUS.map((s) => [s.value, s]));
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function FollowUpBadge({ date }) {
+  if (!date) return null;
+  const today = todayStr();
+  const overdue = date < today;
+  const dueToday = date === today;
+  const label = new Date(date).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+  const style = overdue || dueToday
+    ? "bg-red-50 text-red-600 border-red-200"
+    : "bg-gray-50 text-gray-500 border-gray-200";
+  return (
+    <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${style}`}>
+      {overdue ? "Følg opp! (var " : dueToday ? "Følg opp i dag" : "Følg opp "}{!dueToday && label}{overdue && ")"}
+    </span>
+  );
+}
+
+function SupplierSection({ adminPw }) {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  useEffect(() => {
+    fetch("/api/admin/suppliers", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setSuppliers(Array.isArray(data) ? data : []))
+      .then(() => setLoading(false));
+  }, [adminPw]);
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  async function addSupplier(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/suppliers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ name: newName.trim(), contact: newContact.trim(), notes: newNotes.trim() }),
+    });
+    const supplier = await res.json();
+    setSuppliers((ss) => [...ss, supplier].sort((a, b) => a.name.localeCompare(b.name, "nb")));
+    setNewName("");
+    setNewContact("");
+    setNewNotes("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/suppliers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setSuppliers((ss) => ss.map((s) => s.id === id ? data : s));
+    setEditingId(null);
+  }
+
+  async function deleteSupplier(id) {
+    if (!confirm("Slette leverandøren?")) return;
+    await fetch("/api/admin/suppliers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setSuppliers((ss) => ss.filter((s) => s.id !== id));
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 mb-6 overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-4"
+      >
+        <p className="text-sm font-semibold text-gray-900">Leverandører {!loading && `(${suppliers.length})`}</p>
+        <span className="text-gray-400 text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="text-xs font-medium bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700 transition"
+            >
+              {showAdd ? "Avbryt" : "+ Ny leverandør"}
+            </button>
+          </div>
+
+          {showAdd && (
+            <form onSubmit={addSupplier} className="bg-gray-50 rounded-xl p-4 mb-3 space-y-2">
+              <input value={newName} onChange={(e) => setNewName(e.target.value)} className={inputCls} placeholder="Navn *" autoFocus />
+              <input value={newContact} onChange={(e) => setNewContact(e.target.value)} className={inputCls} placeholder="Kontakt (e-post/telefon)" />
+              <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} className={inputCls} rows={2} placeholder="Notater" />
+              <button type="submit" disabled={saving || !newName.trim()} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50">
+                {saving ? "Lagrer…" : "Legg til"}
+              </button>
+            </form>
+          )}
+
+          {loading && <p className="text-sm text-gray-400">Laster…</p>}
+          {!loading && suppliers.length === 0 && <p className="text-sm text-gray-400">Ingen leverandører lagt til ennå.</p>}
+
+          <div className="space-y-2">
+            {suppliers.map((s) => {
+              const isEditing = editingId === s.id;
+              return (
+                <div key={s.id} className="border border-gray-100 rounded-xl p-3">
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <input value={editForm.name ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className={inputCls} placeholder="Navn" autoFocus />
+                      <input value={editForm.contact ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))} className={inputCls} placeholder="Kontakt" />
+                      <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} className={inputCls} rows={2} placeholder="Notater" />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(s.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition">Lagre</button>
+                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700">Avbryt</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{s.name}</p>
+                        {s.contact && <p className="text-xs text-gray-500 mt-0.5">{s.contact}</p>}
+                        {s.notes && <p className="text-xs text-gray-500 mt-1">{s.notes}</p>}
+                      </div>
+                      <div className="shrink-0 flex gap-1">
+                        <button
+                          onClick={() => { setEditingId(s.id); setEditForm({ name: s.name, contact: s.contact || "", notes: s.notes || "" }); }}
+                          className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                        >Rediger</button>
+                        <button onClick={() => deleteSupplier(s.id)} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition">Slett</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConceptsTab({ adminPw, onViewOffers }) {
+  const [concepts, setConcepts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newSupplier, setNewSupplier] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+  const [newFollowUp, setNewFollowUp] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploadingNew, setUploadingNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [uploadingEdit, setUploadingEdit] = useState(false);
+  const newImageRef = useRef();
+  const editImageRef = useRef();
+
+  function loadConcepts() {
+    return fetch("/api/admin/concepts", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setConcepts(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadConcepts().then(() => setLoading(false));
+  }, [adminPw]);
+
+  async function uploadImage(file) {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("bucket", "concept-images");
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: { "x-admin-password": adminPw },
+      body: data,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    return json.url;
+  }
+
+  async function handleNewImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingNew(true);
+    try {
+      setNewImageUrl(await uploadImage(file));
+    } catch (err) {
+      alert("Opplasting feilet: " + err.message);
+    } finally {
+      setUploadingNew(false);
+    }
+  }
+
+  async function handleEditImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingEdit(true);
+    try {
+      const url = await uploadImage(file);
+      setEditForm((f) => ({ ...f, image_url: url }));
+    } catch (err) {
+      alert("Opplasting feilet: " + err.message);
+    } finally {
+      setUploadingEdit(false);
+    }
+  }
+
+  async function addConcept(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/concepts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({
+        name: newName.trim(),
+        supplier: newSupplier.trim(),
+        contact: newContact.trim(),
+        notes: newNotes.trim(),
+        image_url: newImageUrl,
+        follow_up_date: newFollowUp || null,
+      }),
+    });
+    const concept = await res.json();
+    setConcepts((cs) => [concept, ...cs]);
+    setNewName("");
+    setNewSupplier("");
+    setNewContact("");
+    setNewNotes("");
+    setNewFollowUp("");
+    setNewImageUrl("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function updateStatus(concept, status) {
+    const res = await fetch("/api/admin/concepts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id: concept.id, status }),
+    });
+    const data = await res.json();
+    setConcepts((cs) => cs.map((c) => c.id === concept.id ? data : c));
+  }
+
+  async function deleteConcept(id) {
+    if (!confirm("Slette konseptet?")) return;
+    await fetch("/api/admin/concepts", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setConcepts((cs) => cs.filter((c) => c.id !== id));
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/concepts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setConcepts((cs) => cs.map((c) => c.id === id ? data : c));
+    setEditingId(null);
+  }
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  function ConceptCard({ c }) {
+    const isEditing = editingId === c.id;
+    const status = CONCEPT_STATUS_MAP[c.status] || CONCEPT_STATUS[0];
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        {isEditing ? (
+          <div className="space-y-3">
+            <input
+              value={editForm.name ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+              className={inputCls}
+              placeholder="Konseptnavn"
+              autoFocus
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                value={editForm.supplier ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, supplier: e.target.value }))}
+                className={inputCls}
+                placeholder="Leverandør"
+              />
+              <input
+                value={editForm.contact ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, contact: e.target.value }))}
+                className={inputCls}
+                placeholder="Kontakt (e-post/telefon)"
+              />
+            </div>
+            <textarea
+              value={editForm.notes ?? ""}
+              onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+              className={inputCls}
+              rows={4}
+              placeholder="Notater / logg fra dialog"
+            />
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Følg opp innen</label>
+              <input
+                type="date"
+                value={editForm.follow_up_date ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, follow_up_date: e.target.value }))}
+                className={`${inputCls} w-auto`}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
+                <input value={editForm.image_url ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, image_url: e.target.value }))} className={`${inputCls} flex-1`} placeholder="https://..." />
+                <button
+                  type="button"
+                  onClick={() => editImageRef.current?.click()}
+                  disabled={uploadingEdit}
+                  className="shrink-0 border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-60"
+                >
+                  {uploadingEdit ? "Laster opp…" : "Last opp"}
+                </button>
+                <input ref={editImageRef} type="file" accept="image/*" className="hidden" onChange={handleEditImage} />
+              </div>
+              {editForm.image_url && <img src={editForm.image_url} alt="" className="mt-2 h-24 rounded-xl object-cover" />}
+            </div>
+            <div className="flex gap-2 items-center flex-wrap">
+              <select
+                value={editForm.status ?? c.status}
+                onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                {CONCEPT_STATUS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <button onClick={() => saveEdit(c.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition">Lagre</button>
+              <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700">Avbryt</button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              {c.image_url && (
+                <img src={c.image_url} alt="" className="shrink-0 w-16 h-16 rounded-xl object-cover" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={`shrink-0 text-xs font-medium border rounded-full px-2.5 py-1 ${status.style}`}>
+                    {status.label}
+                  </span>
+                  <FollowUpBadge date={c.follow_up_date} />
+                  <p className="font-semibold text-sm text-gray-900">{c.name}</p>
+                </div>
+                {(c.supplier || c.contact) && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {c.supplier}
+                    {c.supplier && c.contact && " · "}
+                    {c.contact}
+                  </p>
+                )}
+                {c.notes && <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{c.notes}</p>}
+              </div>
+              <div className="shrink-0 flex gap-1">
+                <button
+                  onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, supplier: c.supplier || "", contact: c.contact || "", notes: c.notes || "", status: c.status, image_url: c.image_url || "", follow_up_date: c.follow_up_date || "" }); }}
+                  className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                >Rediger</button>
+                <button
+                  onClick={() => deleteConcept(c.id)}
+                  className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                >Slett</button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2 flex-wrap mt-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {CONCEPT_STATUS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateStatus(c, s.value)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${c.status === s.value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              {onViewOffers && (
+                <button
+                  onClick={() => onViewOffers(c.id)}
+                  className="text-xs font-medium text-blue-600 hover:underline"
+                >
+                  Se tilbud →
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <SupplierSection adminPw={adminPw} />
+
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Sokkekonsepter</h2>
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAdd ? "Avbryt" : "+ Nytt konsept"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={addConcept} className="bg-white rounded-2xl border border-gray-200 p-5 mb-4 space-y-3">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className={inputCls}
+            placeholder="Konseptnavn *"
+            autoFocus
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              value={newSupplier}
+              onChange={(e) => setNewSupplier(e.target.value)}
+              className={inputCls}
+              placeholder="Leverandør"
+            />
+            <input
+              value={newContact}
+              onChange={(e) => setNewContact(e.target.value)}
+              className={inputCls}
+              placeholder="Kontakt (e-post/telefon)"
+            />
+          </div>
+          <textarea
+            value={newNotes}
+            onChange={(e) => setNewNotes(e.target.value)}
+            className={inputCls}
+            rows={3}
+            placeholder="Notater / status på dialogen"
+          />
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Følg opp innen</label>
+            <input
+              type="date"
+              value={newFollowUp}
+              onChange={(e) => setNewFollowUp(e.target.value)}
+              className={`${inputCls} w-auto`}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
+              <input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className={`${inputCls} flex-1`} placeholder="https://..." />
+              <button
+                type="button"
+                onClick={() => newImageRef.current?.click()}
+                disabled={uploadingNew}
+                className="shrink-0 border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-60"
+              >
+                {uploadingNew ? "Laster opp…" : "Last opp"}
+              </button>
+              <input ref={newImageRef} type="file" accept="image/*" className="hidden" onChange={handleNewImage} />
+            </div>
+            {newImageUrl && <img src={newImageUrl} alt="" className="mt-2 h-24 rounded-xl object-cover" />}
+          </div>
+          <button
+            type="submit"
+            disabled={saving || !newName.trim()}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {saving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
+
+      {loading && <p className="text-sm text-gray-400">Laster konsepter…</p>}
+      {!loading && concepts.length === 0 && <p className="text-sm text-gray-400">Ingen konsepter lagt til ennå.</p>}
+
+      <div className="space-y-3">
+        {concepts.map((c) => <ConceptCard key={c.id} c={c} />)}
+      </div>
+    </div>
+  );
+}
+
+const OFFER_STATUS = [
+  { value: "contacted", label: "Kontaktet", style: "bg-gray-50 text-gray-500 border-gray-200", edge: "border-l-gray-300" },
+  { value: "waiting", label: "Venter svar", style: "bg-yellow-50 text-yellow-700 border-yellow-200", edge: "border-l-yellow-400" },
+  { value: "received", label: "Tilbud mottatt", style: "bg-blue-50 text-blue-600 border-blue-200", edge: "border-l-blue-400" },
+  { value: "sample", label: "Prøve bestilt", style: "bg-purple-50 text-purple-600 border-purple-200", edge: "border-l-purple-400" },
+  { value: "rejected", label: "Avslått", style: "bg-red-50 text-red-500 border-red-200", edge: "border-l-red-400" },
+  { value: "chosen", label: "Valgt", style: "bg-green-50 text-green-700 border-green-200", edge: "border-l-green-400" },
+];
+const OFFER_STATUS_MAP = Object.fromEntries(OFFER_STATUS.map((s) => [s.value, s]));
+
+function ComparisonTab({ adminPw, focusConceptId }) {
+  const [offers, setOffers] = useState([]);
+  const [concepts, setConcepts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const conceptRefs = useRef({});
+  const [conceptId, setConceptId] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [status, setStatus] = useState("contacted");
+  const [price, setPrice] = useState("");
+  const [moq, setMoq] = useState("");
+  const [leadTime, setLeadTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/supplier-offers", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setOffers(Array.isArray(data) ? data : [])),
+      fetch("/api/admin/concepts", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setConcepts(Array.isArray(data) ? data : [])),
+      fetch("/api/admin/suppliers", { headers: { "x-admin-password": adminPw } })
+        .then((r) => r.json())
+        .then((data) => setSuppliers(Array.isArray(data) ? data : [])),
+    ]).then(() => setLoading(false));
+  }, [adminPw]);
+
+  useEffect(() => {
+    if (!loading && focusConceptId && conceptRefs.current[focusConceptId]) {
+      conceptRefs.current[focusConceptId].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [loading, focusConceptId]);
+
+  useEffect(() => {
+    if (focusConceptId) setConceptId(String(focusConceptId));
+  }, [focusConceptId]);
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  async function addOffer(e) {
+    e.preventDefault();
+    if (!conceptId || !supplierId) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/supplier-offers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({
+        concept_id: conceptId,
+        supplier_id: supplierId,
+        status,
+        price: price.trim(),
+        moq: moq.trim(),
+        lead_time: leadTime.trim(),
+        notes: notes.trim(),
+      }),
+    });
+    const offer = await res.json();
+    setOffers((os) => [...os, offer]);
+    setConceptId("");
+    setSupplierId("");
+    setStatus("contacted");
+    setPrice("");
+    setMoq("");
+    setLeadTime("");
+    setNotes("");
+    setShowAdd(false);
+    setSaving(false);
+  }
+
+  async function updateStatus(offer, newStatus) {
+    const res = await fetch("/api/admin/supplier-offers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id: offer.id, status: newStatus }),
+    });
+    const data = await res.json();
+    setOffers((os) => os.map((o) => o.id === offer.id ? data : o));
+  }
+
+  async function saveEdit(id) {
+    const res = await fetch("/api/admin/supplier-offers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, ...editForm }),
+    });
+    const data = await res.json();
+    setOffers((os) => os.map((o) => o.id === id ? data : o));
+    setEditingId(null);
+  }
+
+  async function deleteOffer(id) {
+    if (!confirm("Slette henvendelsen?")) return;
+    await fetch("/api/admin/supplier-offers", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id }),
+    });
+    setOffers((os) => os.filter((o) => o.id !== id));
+  }
+
+  const conceptIdsWithOffers = [...new Set(offers.map((o) => o.concept_id))];
+  const orderedConceptIds = [
+    ...concepts.map((c) => c.id).filter((id) => conceptIdsWithOffers.includes(id)),
+    ...conceptIdsWithOffers.filter((id) => !concepts.some((c) => c.id === id)),
+  ];
+
+  return (
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Leverandørtilbud per konsept</h2>
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAdd ? "Avbryt" : "+ Ny henvendelse"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={addOffer} className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Konsept</label>
+            <select value={conceptId} onChange={(e) => setConceptId(e.target.value)} className={inputCls} autoFocus>
+              <option value="">Velg konsept…</option>
+              {concepts.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {concepts.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">Ingen konsepter lagt til ennå — legg til under "Sokkekonsepter" først.</p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Leverandør</label>
+            <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputCls}>
+              <option value="">Velg leverandør…</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            {suppliers.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">Ingen leverandører lagt til ennå — legg til i leverandørlisten først.</p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
+              {OFFER_STATUS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} placeholder="Pris (f.eks. 42-45 kr/par)" />
+            <input value={moq} onChange={(e) => setMoq(e.target.value)} className={inputCls} placeholder="MOQ (f.eks. 336 par/str.)" />
+            <input value={leadTime} onChange={(e) => setLeadTime(e.target.value)} className={inputCls} placeholder="Leveringstid" />
+          </div>
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} rows={2} placeholder="Notater (kvalitet, filformat, forbehold…)" />
+          <button
+            type="submit"
+            disabled={saving || !conceptId || !supplierId}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {saving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
+
+      {loading && <p className="text-sm text-gray-400">Laster…</p>}
+      {!loading && offers.length === 0 && <p className="text-sm text-gray-400">Ingen leverandørhenvendelser registrert ennå.</p>}
+
+      <div className="space-y-8">
+        {orderedConceptIds.map((cid) => {
+          const concept = concepts.find((c) => c.id === cid);
+          const conceptOffers = offers.filter((o) => o.concept_id === cid);
+          const isFocused = focusConceptId && String(focusConceptId) === String(cid);
+          return (
+            <div
+              key={cid}
+              ref={(el) => { conceptRefs.current[cid] = el; }}
+              className={isFocused ? "ring-2 ring-gray-900 ring-offset-4 ring-offset-gray-100 rounded-2xl" : ""}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                {concept?.image_url && (
+                  <img src={concept.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                )}
+                <h3 className="text-lg font-bold text-gray-900">{concept?.name || "Ukjent konsept"}</h3>
+              </div>
+              <div className="space-y-2">
+                {conceptOffers.map((o) => {
+                  const isEditing = editingId === o.id;
+                  const st = OFFER_STATUS_MAP[o.status] || OFFER_STATUS[0];
+                  return (
+                    <div key={o.id} className={`bg-white rounded-2xl border border-gray-200 border-l-4 ${st.edge} p-4`}>
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <input value={editForm.price ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))} className={inputCls} placeholder="Pris" />
+                            <input value={editForm.moq ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, moq: e.target.value }))} className={inputCls} placeholder="MOQ" />
+                            <input value={editForm.lead_time ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, lead_time: e.target.value }))} className={inputCls} placeholder="Leveringstid" />
+                          </div>
+                          <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} className={inputCls} rows={2} placeholder="Notater" />
+                          <div className="flex gap-2">
+                            <button onClick={() => saveEdit(o.id)} className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition">Lagre</button>
+                            <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700">Avbryt</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold text-sm text-gray-900">{o.supplier?.name || "Ukjent leverandør"}</p>
+                                <select
+                                  value={o.status}
+                                  onChange={(e) => updateStatus(o, e.target.value)}
+                                  className={`shrink-0 text-xs font-medium border rounded-full pl-2.5 pr-5 py-1 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-900 ${st.style}`}
+                                >
+                                  {OFFER_STATUS.map((s) => (
+                                    <option key={s.value} value={s.value}>{s.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              {o.supplier?.contact && (
+                                <p className="text-xs text-gray-400 mt-0.5">{o.supplier.contact}</p>
+                              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-sm">
+                                <div><span className="text-gray-400">Pris</span><br />{o.price || "–"}</div>
+                                <div><span className="text-gray-400">MOQ</span><br />{o.moq || "–"}</div>
+                                <div><span className="text-gray-400">Leveringstid</span><br />{o.lead_time || "–"}</div>
+                              </div>
+                              {o.notes && (
+                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                  <p className="text-xs text-gray-400 mb-1">Notater</p>
+                                  <p className="text-sm text-gray-600">{o.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="shrink-0 flex gap-1">
+                              <button
+                                onClick={() => { setEditingId(o.id); setEditForm({ price: o.price || "", moq: o.moq || "", lead_time: o.lead_time || "", notes: o.notes || "" }); }}
+                                className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+                              >Rediger</button>
+                              <button onClick={() => deleteOffer(o.id)} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition">Slett</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProductDevTab({ adminPw }) {
+  const [subTab, setSubTab] = useState("concepts");
+  const [focusConceptId, setFocusConceptId] = useState(null);
+
+  function viewOffers(conceptId) {
+    setFocusConceptId(conceptId);
+    setSubTab("compare");
+  }
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
+        {[
+          { value: "concepts", label: "Konsepter" },
+          { value: "compare", label: "Tilbud" },
+        ].map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setSubTab(t.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              subTab === t.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {subTab === "concepts" && <ConceptsTab adminPw={adminPw} onViewOffers={viewOffers} />}
+      {subTab === "compare" && <ComparisonTab adminPw={adminPw} focusConceptId={focusConceptId} />}
+    </div>
+  );
+}
+
+const DIGEST_TYPE_LABEL = { result: "Resultat", race_update: "Oppdatering", new_race: "Nytt løp" };
+const DIGEST_TYPE_STYLE = {
+  result: "bg-blue-50 text-blue-600 border-blue-200",
+  race_update: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  new_race: "bg-green-50 text-green-700 border-green-200",
+};
+
+function DigestTab({ adminPw }) {
+  const [text, setText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+
+  function loadSuggestions() {
+    return fetch("/api/admin/digest-suggestions?status=pending", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setSuggestions(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadSuggestions().then(() => setLoading(false));
+  }, [adminPw]);
+
+  async function parseText() {
+    setParsing(true);
+    setParseResult(null);
+    try {
+      const res = await fetch("/api/admin/digest-parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setParseResult({ ok: false, message: data.error });
+      } else {
+        setParseResult({ ok: true, message: `${data.count} forslag funnet` });
+        setText("");
+        await loadSuggestions();
+      }
+    } catch (err) {
+      setParseResult({ ok: false, message: err.message });
+    }
+    setParsing(false);
+  }
+
+  async function act(id, action) {
+    setBusyId(id);
+    const res = await fetch("/api/admin/digest-suggestions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ id, action }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert("Feil: " + data.error);
+    } else {
+      setSuggestions((s) => s.filter((x) => x.id !== id));
+    }
+    setBusyId(null);
+  }
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Lim inn oppdatering</h2>
+        <p className="text-sm text-gray-500 mb-3">
+          Lim inn teksten fra ChatGPT (resultater, nye løp, påmeldingsåpninger, korrigeringer).
+          Den blir automatisk strukturert og du får forslag til endringer under — ingenting går live før du godkjenner hvert forslag.
+        </p>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+          placeholder="Lim inn hele oppdateringen her…"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition"
+        />
+        <button
+          onClick={parseText}
+          disabled={parsing || text.trim().length < 20}
+          className="mt-3 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+        >
+          {parsing ? "Analyserer…" : "Analyser"}
+        </button>
+        {parseResult && (
+          <p className={`text-sm mt-2 ${parseResult.ok ? "text-green-600" : "text-red-600"}`}>
+            {parseResult.ok ? "✓ " : "✗ "}{parseResult.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Ventende forslag</h2>
+        {loading && <p className="text-sm text-gray-400">Laster…</p>}
+        {!loading && suggestions.length === 0 && <p className="text-sm text-gray-400">Ingen ventende forslag.</p>}
+        <div className="space-y-3">
+          {suggestions.map((s) => {
+            const needsMatch = (s.type === "result" || s.type === "race_update") && !s.race_slug;
+            return (
+              <div key={s.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <span className={`text-xs font-medium border rounded-full px-2.5 py-1 ${DIGEST_TYPE_STYLE[s.type]}`}>
+                    {DIGEST_TYPE_LABEL[s.type] || s.type}
+                  </span>
+                  <span className="font-semibold text-sm text-gray-900">{s.race_name}</span>
+                  {s.race_slug ? (
+                    <span className="text-xs text-gray-400">matchet: {s.race_slug}</span>
+                  ) : (
+                    <span className="text-xs text-amber-600">ingen match i databasen</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{s.summary}</p>
+
+                {/* Vis nøyaktig hva som blir endret, slik at det kan verifiseres før godkjenning */}
+                {s.type === "race_update" && s.fields && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {s.fields.date && (
+                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                        dato → {s.fields.date}
+                      </span>
+                    )}
+                    {s.fields.status_note && (
+                      <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-2.5 py-1">
+                        status → {s.fields.status_note}
+                      </span>
+                    )}
+                    {s.fields.registration_opens_at && (
+                      <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1">
+                        påmelding åpner → {s.fields.registration_opens_at}
+                      </span>
+                    )}
+                    {s.fields.description && (
+                      <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                        + tillegg i beskrivelse
+                      </span>
+                    )}
+                    {!s.fields.date && !s.fields.status_note && !s.fields.registration_opens_at && !s.fields.description && (
+                      <span className="text-xs text-amber-600">Ingen felt å endre funnet — trygt å avvise</span>
+                    )}
+                  </div>
+                )}
+                {s.type === "race_update" && !s.fields && (
+                  <p className="text-xs text-amber-600 mb-2">
+                    Mangler feltdata helt (fields er tomt) — trygt å avvise. Kan skje på forslag generert før en tidligere fiks.
+                  </p>
+                )}
+                {s.type === "result" && s.fields?.winners && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {s.fields.winners.map((w, i) => (
+                      <span key={i} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                        {w.name} · {w.time}{w.position ? ` · plass ${w.position}` : " · plass ukjent"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {s.type === "new_race" && (
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {s.fields?.date && (
+                        <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1">
+                          dato: {s.fields.date}
+                        </span>
+                      )}
+                      {s.fields?.location && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          sted: {s.fields.location}
+                        </span>
+                      )}
+                      {s.fields?.region && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          region: {s.fields.region}
+                        </span>
+                      )}
+                      {s.fields?.url && (
+                        <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
+                          url: {s.fields.url}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Godkjenning skriver dette til race_submissions-køen (samme som kontaktskjemaet) — påvirker ikke selve nettsiden direkte.
+                    </p>
+                  </div>
+                )}
+
+                {s.source_url && (
+                  <a href={s.source_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                    Kilde ↗
+                  </a>
+                )}
+                <div className="flex gap-2 mt-3 items-center">
+                  <button
+                    onClick={() => act(s.id, "approve")}
+                    disabled={busyId === s.id || needsMatch}
+                    title={needsMatch ? "Ingen matchet løp — kan ikke godkjennes automatisk" : ""}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-40"
+                  >
+                    Godkjenn
+                  </button>
+                  <button
+                    onClick={() => act(s.id, "reject")}
+                    disabled={busyId === s.id}
+                    className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    Avvis
+                  </button>
+                  {needsMatch && (
+                    <span className="text-xs text-gray-400">Match manuelt i Supabase, eller avvis</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_OPTIONS = [
   { value: "", label: "Ingen" },
   { value: "Utsolgt", label: "Utsolgt" },
@@ -326,7 +1556,7 @@ function PasswordGate({ onAuth }) {
     if (res.status === 401) {
       setError("Feil passord");
     } else {
-      sessionStorage.setItem("adminPw", pw);
+      localStorage.setItem("adminPw", pw);
       onAuth(pw);
     }
   }
@@ -368,6 +1598,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
     status_note: race.status_note || "",
     description: race.description || "",
     image_url: race.image_url || "",
+    registration_opens_at: race.registration_opens_at || "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -443,7 +1674,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Navn</label>
           <input value={form.name} onChange={set("name")} className={inputCls} />
@@ -454,7 +1685,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Sted</label>
           <input value={form.location} onChange={set("location")} className={inputCls} />
@@ -465,7 +1696,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Nettside (URL)</label>
           <input value={form.url} onChange={set("url")} className={inputCls} placeholder="https://..." />
@@ -480,6 +1711,13 @@ function RaceEditor({ race, adminPw, onSaved }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Påmelding åpner</label>
+          <input type="date" value={form.registration_opens_at} onChange={set("registration_opens_at")} className={inputCls} />
+        </div>
+      </div>
+
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Beskrivelse</label>
         <textarea value={form.description} onChange={set("description")} rows={4} className={inputCls} />
@@ -488,7 +1726,7 @@ function RaceEditor({ race, adminPw, onSaved }) {
       {/* Bilde */}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Bilde</label>
-        <div className="flex gap-2 items-start">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
           <input value={form.image_url} onChange={set("image_url")} className={`${inputCls} flex-1`} placeholder="https://..." />
           <button
             type="button"
@@ -554,6 +1792,9 @@ function ShopTab({ adminPw }) {
   const [adjQty, setAdjQty] = useState("");
   const [adjNote, setAdjNote] = useState("");
   const [adjSaving, setAdjSaving] = useState(false);
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [newOrder, setNewOrder] = useState({ name: "", email: "", size: "S", quantity: 1, address: "", postal_code: "", city: "", status: "paid", total_price: "", notes: "" });
+  const [orderSaving, setOrderSaving] = useState(false);
 
   function loadAdjustments() {
     return fetch("/api/admin/stock-adjustments", { headers: { "x-admin-password": adminPw } })
@@ -592,6 +1833,33 @@ function ShopTab({ adminPw }) {
       body: JSON.stringify({ id, status }),
     });
     setOrders((os) => os.map((o) => o.id === id ? { ...o, status } : o));
+  }
+
+  async function addOrder(e) {
+    e.preventDefault();
+    if (!newOrder.name.trim() || !newOrder.quantity) return;
+    setOrderSaving(true);
+    const res = await fetch("/api/admin/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({
+        name: newOrder.name.trim(),
+        email: newOrder.email.trim(),
+        size: newOrder.size,
+        quantity: parseInt(newOrder.quantity),
+        address: newOrder.address.trim(),
+        postal_code: newOrder.postal_code.trim(),
+        city: newOrder.city.trim(),
+        status: newOrder.status,
+        total_price: newOrder.total_price ? parseInt(newOrder.total_price) : getTotal(parseInt(newOrder.quantity)),
+        notes: newOrder.notes.trim(),
+      }),
+    });
+    const order = await res.json();
+    setOrders((os) => [order, ...os]);
+    setNewOrder({ name: "", email: "", size: "S", quantity: 1, address: "", postal_code: "", city: "", status: "paid", total_price: "", notes: "" });
+    setShowAddOrder(false);
+    setOrderSaving(false);
   }
 
   function formatDate(str) {
@@ -634,10 +1902,55 @@ function ShopTab({ adminPw }) {
   );
 
   const filtered = orders.filter((o) => filterStatus === "all" || o.status === filterStatus);
+  const ordInputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Sokkebestillinger</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">Sokkebestillinger</h2>
+        <button
+          onClick={() => setShowAddOrder((v) => !v)}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition"
+        >
+          {showAddOrder ? "Avbryt" : "+ Legg til bestilling"}
+        </button>
+      </div>
+
+      {showAddOrder && (
+        <form onSubmit={addOrder} className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 space-y-3">
+          <p className="text-xs text-gray-400">For salg utenfor nettsiden, f.eks. privat via Vipps.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input value={newOrder.name} onChange={(e) => setNewOrder((f) => ({ ...f, name: e.target.value }))} className={ordInputCls} placeholder="Navn *" />
+            <input value={newOrder.email} onChange={(e) => setNewOrder((f) => ({ ...f, email: e.target.value }))} className={ordInputCls} placeholder="E-post (valgfritt)" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <select value={newOrder.size} onChange={(e) => setNewOrder((f) => ({ ...f, size: e.target.value }))} className={ordInputCls}>
+              {["S", "M", "L"].map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <input type="number" min="1" value={newOrder.quantity} onChange={(e) => setNewOrder((f) => ({ ...f, quantity: e.target.value }))} className={ordInputCls} placeholder="Antall par" />
+            <select value={newOrder.status} onChange={(e) => setNewOrder((f) => ({ ...f, status: e.target.value }))} className={`${ordInputCls} col-span-2 sm:col-span-1`}>
+              {ORDER_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input value={newOrder.address} onChange={(e) => setNewOrder((f) => ({ ...f, address: e.target.value }))} className={`${ordInputCls} sm:col-span-1`} placeholder="Adresse (valgfritt)" />
+            <input value={newOrder.postal_code} onChange={(e) => setNewOrder((f) => ({ ...f, postal_code: e.target.value }))} className={ordInputCls} placeholder="Postnr" />
+            <input value={newOrder.city} onChange={(e) => setNewOrder((f) => ({ ...f, city: e.target.value }))} className={ordInputCls} placeholder="Sted" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Totalpris (kr) — la stå tomt for standardpris ({getTotal(parseInt(newOrder.quantity) || 1)} kr for {newOrder.quantity || 1} par)</label>
+            <input type="number" min="0" value={newOrder.total_price} onChange={(e) => setNewOrder((f) => ({ ...f, total_price: e.target.value }))} className={ordInputCls} placeholder="Standardpris brukes hvis tomt" />
+          </div>
+          <textarea value={newOrder.notes} onChange={(e) => setNewOrder((f) => ({ ...f, notes: e.target.value }))} className={ordInputCls} rows={2} placeholder="Notater (f.eks. «Solgt privat via Vipps»)" />
+          <button
+            type="submit"
+            disabled={orderSaving || !newOrder.name.trim() || !newOrder.quantity}
+            className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {orderSaving ? "Lagrer…" : "Legg til"}
+          </button>
+        </form>
+      )}
 
       {/* Økonomi-kort */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
@@ -1005,9 +2318,10 @@ export default function AdminPage() {
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("adminPw");
+    const stored = localStorage.getItem("adminPw");
     if (stored) setAdminPw(stored);
   }, []);
 
@@ -1053,23 +2367,63 @@ export default function AdminPage() {
     <>
       <Head>
         <title>Admin – Langeløp.no</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
+      {/* Mobile top bar */}
+      <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 -ml-2 text-gray-600"
+          aria-label="Åpne meny"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <p className="text-sm font-semibold text-gray-900">Admin – Langeløp.no</p>
+        <div className="w-6" />
+      </div>
+
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       <div className="min-h-screen bg-gray-100 flex">
         {/* Sidebar */}
-        <div className="w-80 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+        <div
+          className={`fixed md:static inset-y-0 left-0 z-40 w-80 max-w-[85vw] shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen md:sticky md:top-0 transform transition-transform duration-200 md:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
           <div className="p-4 border-b border-gray-100 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Admin</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin</p>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="md:hidden p-1 text-gray-400 hover:text-gray-600"
+                aria-label="Lukk meny"
+              >
+                ✕
+              </button>
+            </div>
             <div className="flex rounded-xl overflow-hidden border border-gray-200">
               {[
                 { value: "races", label: "Løp" },
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
+                { value: "concepts", label: "Konsepter" },
+                { value: "digest", label: "Oppdateringer" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
                   key={t.value}
-                  onClick={() => setTab(t.value)}
-                  className={`flex-1 py-2 text-sm font-medium transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                  onClick={() => { setTab(t.value); if (t.value !== "races") setMobileMenuOpen(false); }}
+                  className={`flex-1 py-2 px-1 text-sm font-medium border-r border-gray-200 last:border-r-0 transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
                 >
                   {t.label}
                 </button>
@@ -1108,7 +2462,7 @@ export default function AdminPage() {
             {tab === "races" && filtered.map((race) => (
               <button
                 key={race.slug}
-                onClick={() => setSelected(race)}
+                onClick={() => { setSelected(race); setMobileMenuOpen(false); }}
                 className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${selected?.slug === race.slug ? "bg-gray-50 border-l-2 border-l-gray-900" : ""}`}
               >
                 <p className="text-sm font-medium text-gray-900 leading-snug">{race.name}</p>
@@ -1126,7 +2480,7 @@ export default function AdminPage() {
           </div>
           <div className="p-4 border-t border-gray-100">
             <button
-              onClick={() => { sessionStorage.removeItem("adminPw"); setAdminPw(null); }}
+              onClick={() => { localStorage.removeItem("adminPw"); setAdminPw(null); }}
               className="text-xs text-gray-400 hover:text-gray-600 transition"
             >
               Logg ut
@@ -1135,12 +2489,20 @@ export default function AdminPage() {
         </div>
 
         {/* Hovedinnhold */}
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
+          {tab === "concepts" && <ProductDevTab adminPw={adminPw} />}
+          {tab === "digest" && <DigestTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden mb-4 text-sm text-blue-600 hover:underline"
+              >
+                ← Tilbake til løpsliste
+              </button>
               <div className="mb-6">
                 <a href={`/${selected.slug}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
                   Se løpsside →
