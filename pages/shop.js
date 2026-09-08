@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
@@ -230,6 +231,60 @@ const PRODUCT = {
   ],
 };
 
+function SizeWaitlist({ size }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | loading | done | error
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+
+    try {
+      const r = await fetch("/api/sock-waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, size, produkt_id: PRODUKT_ID }),
+      });
+      if (!r.ok) throw new Error();
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  if (status === "done") {
+    return (
+      <span className="text-xs font-medium text-green-700">
+        Du får beskjed ✓
+      </span>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-1.5">
+      <input
+        type="email"
+        required
+        placeholder="Din e-post"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-32 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-900"
+      />
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="rounded-lg bg-gray-900 text-white text-xs font-medium px-2.5 py-1 whitespace-nowrap disabled:opacity-60"
+      >
+        {status === "loading" ? "..." : "Varsle meg"}
+      </button>
+      {status === "error" && (
+        <span className="text-xs text-red-500">Feil</span>
+      )}
+    </form>
+  );
+}
+
 function OrderForm({ onSuccess }) {
   const [formState, setFormState] = useState({ status: "idle", message: "" });
   // sizeQty: { S: 0, M: 0, L: 0 }
@@ -358,7 +413,7 @@ function OrderForm({ onSuccess }) {
             </span>
 
             {s.soldOut ? (
-              <span className="text-xs text-gray-400">–</span>
+              <SizeWaitlist size={s.value} />
             ) : (
               <div className="flex items-center gap-3">
                 <button
@@ -513,7 +568,60 @@ export default function Shop() {
     setTimeout(() => setMobileCtaOpen(false), 2500);
   }
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Langeløp Endurance Crew-sokker",
+    "description": "Limited drop løpesokker fra Langeløp.no. Designet for ultraløpere.",
+    "brand": { "@type": "Brand", "name": "Langeløp" },
+    "url": "https://www.langelop.no/shop",
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "NOK",
+      "price": "249",
+      "availability": "https://schema.org/InStock",
+      "url": "https://www.langelop.no/shop",
+      "seller": { "@type": "Organization", "name": "Langeløp.no" },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "69",
+          "currency": "NOK"
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "NO"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"]
+          },
+          "cutoffTime": "14:00:00",
+          "handlingTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "DAY" },
+          "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 4, "unitCode": "DAY" }
+        }
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "NO",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+        "merchantReturnDays": 30,
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnFees": "https://schema.org/FreeReturn"
+      }
+    }
+  };
+
   return (
+    <>
+    <Head>
+      <title>Langeløp-sokker | Limited drop fra Langeløp.no</title>
+      <meta name="description" content="Limited drop løpesokker fra Langeløp.no. Designet for ultraløpere. Bestill nå og betal via Vipps." />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+    </Head>
     <div className="min-h-screen bg-gray-100 px-4 pt-14 pb-24 md:pb-14">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
@@ -695,6 +803,7 @@ export default function Shop() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
