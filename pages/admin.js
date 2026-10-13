@@ -3,6 +3,16 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-10-13",
+    title: "SEO mot 2027 + nyhetsbrev-popup oppdatert",
+    items: [
+      "Forsiden har nå egen tittel/meta med dynamisk årstall (f.eks. «Ultraløp i Norge 2026/2027») i stedet for den generiske standardtittelen — oppdaterer seg selv hvert år",
+      "Løpssider hadde allerede dynamisk årstall i SEO-tittelen fra før (ingen endring nødvendig der)",
+      "Nyhetsbrev-popup: nytt punkt om å få beskjed når nye 2027-datoer bekreftes (årstall beregnes dynamisk, ikke hardkodet)",
+      "Oppdatert abonnenttall i popup fra +150 til +200",
+    ],
+  },
+  {
     date: "2026-08-26",
     title: "Forhåndsvisning for «Nytt løp»-kort",
     items: [

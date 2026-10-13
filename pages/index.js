@@ -11,6 +11,7 @@ import TopNavPill from '../components/TopNavPill';
 import { CalendarToggle } from '../components/CalendarToggle';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Head from 'next/head';
 import SmartImage from '../components/SmartImage';
 import { articles } from '../data/articles';
 import { SlidersHorizontal, X, Flame, Clock } from 'lucide-react';
@@ -59,13 +60,16 @@ export async function getStaticProps() {
     console.error('Supabase fetch error:', error);
   }
 
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+
   return {
-    props: { races: races || [], fetchError: error ? true : false },
+    props: { races: races || [], fetchError: error ? true : false, currentYear, nextYear },
     revalidate: 60,
   };
 }
 
-export default function Home({ races, fetchError }) {
+export default function Home({ races, fetchError, currentYear, nextYear }) {
   const [distanceRange, setDistanceRange] = useState([0, 200]);
   const [showCustomDistance, setShowCustomDistance] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -339,6 +343,19 @@ export default function Home({ races, fetchError }) {
 
   return (
     <>
+      <Head>
+        <title>{`Ultraløp i Norge ${currentYear}/${nextYear} | langeløp.no`}</title>
+        <meta
+          name="description"
+          content={`Oversikt over ultraløp i Norge — oppdateres fortløpende med ${nextYear}-datoer etter hvert som arrangørene bekrefter dem. Finn din neste utfordring, få tips og inspirasjon.`}
+        />
+        <meta property="og:title" content={`Ultraløp i Norge ${currentYear}/${nextYear} | langelop.no`} />
+        <meta
+          property="og:description"
+          content={`Oversikt over ultraløp i Norge — oppdateres fortløpende med ${nextYear}-datoer.`}
+        />
+        <meta name="twitter:title" content={`Ultraløp i Norge ${currentYear}/${nextYear} | langelop.no`} />
+      </Head>
       {/* ── DatePicker custom styles ────────────────────────────────────────── */}
       <style>{`
         .react-datepicker {

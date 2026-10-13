@@ -1,6 +1,8 @@
 // components/NewsletterPopup.jsx
 import { useState, useEffect } from 'react';
 
+const nextYear = new Date().getFullYear() + 1;
+
 export default function NewsletterPopup() {
   const [visible, setVisible] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -114,6 +116,7 @@ export default function NewsletterPopup() {
                 '📝 Race reviews - ærlige og personlige',
                 '🎒 Utstyrsguider og pakkelister',
                 '📅 Løp du bør ha på radaren',
+                `🗓️ Få beskjed når nye ${nextYear}-datoer bekreftes`,
                 '🎁 Tidlig tilgang til nye produkter',
               ].map((item) => (
                 <li key={item} className="text-xs text-gray-600 flex items-start gap-2">
@@ -146,7 +149,7 @@ export default function NewsletterPopup() {
 
             <div className="flex items-center justify-between mt-4">
               <p className="text-xs font-semibold text-gray-700">
-                +150 løpere er allerede med
+                +200 løpere er allerede med
               </p>
               <button
                 onClick={handleClose}
