@@ -1,5 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Vercel Hobby defaulter til 10s per funksjon, for kort til å generere
+// beskrivelser for flere løp i ett Gemini-kall. Utvider budsjettet.
+export const config = { maxDuration: 60 };
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -42,7 +46,7 @@ async function callGemini(model, userMessage) {
         generationConfig: { responseMimeType: "application/json" },
       }),
     },
-    8000
+    25000
   );
   if (!geminiRes.ok) {
     const errText = await geminiRes.text();

@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-10-16",
+    title: "Fiks timeout ved generering av løpsbeskrivelser",
+    items: [
+      "«This operation was aborted» — min egen 8s-grense mot Gemini var for stram til å generere 8 beskrivelser i ett kall, ikke et Gemini-problem",
+      "Utvidet Vercel-funksjonens tidsbudsjett til 60s (var default 10s) og hevet Gemini-timeout til 25s per modellforsøk",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Fiks fanemeny i admin — 7 faner ble klemt sammen",
     items: [
       "Fanelisten brukte flex-1 i én rad, så med 7 faner (inkl. nye Oppdateringer/Beskrivelser) ble lange navn som «Beskrivelser» trolig uleselige/vanskelig å trykke på",
