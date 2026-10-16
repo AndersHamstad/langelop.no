@@ -4,6 +4,16 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-10-16",
+    title: "Ny Beskrivelser-fane: bulk-generer løpsbeskrivelser",
+    items: [
+      "Viser alle løp uten beskrivelse, med «Generer beskrivelser»-knapp som lager AI-utkast basert på navn/sted/distanse/type",
+      "Hvert utkast må godkjennes/redigeres og lagres manuelt — ingenting skrives direkte til races-tabellen",
+      "Batcher 8 løp om gangen mot Gemini for å holde seg innenfor Vercel sin 10-sekunders grense per kall",
+      "Pushet kun til feature-branchen for forhåndsvisning",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Flyttet shop-promo forbi kommentarfeltet på løpssider",
     items: [
       "Promoen rett etter «Om løpet» så rar ut på løp uten utfylt beskrivelse — virket som siden hovedsakelig var laget for å pushe egne produkter",
@@ -1337,6 +1347,154 @@ function ProductDevTab({ adminPw }) {
   );
 }
 
+function DescriptionsTab({ adminPw }) {
+  const [races, setRaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [drafts, setDrafts] = useState([]); // { slug, name, text }
+  const [savingSlug, setSavingSlug] = useState(null);
+  const [genError, setGenError] = useState("");
+
+  function loadRaces() {
+    return fetch("/api/admin/races", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setRaces(Array.isArray(data) ? data : []));
+  }
+
+  useEffect(() => {
+    loadRaces().then(() => setLoading(false));
+  }, [adminPw]);
+
+  const missing = races.filter((r) => !r.description?.trim());
+
+  async function generateAll() {
+    setGenerating(true);
+    setGenError("");
+    setDrafts([]);
+    const slugs = missing.map((r) => r.slug);
+    const BATCH = 8;
+    const newDrafts = [];
+    setProgress({ done: 0, total: slugs.length });
+
+    for (let i = 0; i < slugs.length; i += BATCH) {
+      const batch = slugs.slice(i, i + BATCH);
+      try {
+        const res = await fetch("/api/admin/generate-descriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+          body: JSON.stringify({ slugs: batch }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setGenError((e) => e || data.error || "Noe feilet underveis");
+        } else {
+          for (const d of data.descriptions || []) {
+            const race = missing.find((r) => r.slug === d.slug);
+            newDrafts.push({ slug: d.slug, name: race?.name || d.slug, text: d.description });
+          }
+        }
+      } catch (err) {
+        setGenError((e) => e || err.message);
+      }
+      setProgress({ done: Math.min(i + BATCH, slugs.length), total: slugs.length });
+      setDrafts([...newDrafts]);
+    }
+    setGenerating(false);
+  }
+
+  async function saveDraft(slug, text) {
+    setSavingSlug(slug);
+    const res = await fetch("/api/admin/update-race", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+      body: JSON.stringify({ slug, description: text }),
+    });
+    setSavingSlug(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert("Feil: " + (data.error || "Ukjent feil"));
+      return;
+    }
+    setDrafts((ds) => ds.filter((d) => d.slug !== slug));
+    setRaces((rs) => rs.map((r) => (r.slug === slug ? { ...r, description: text } : r)));
+  }
+
+  function rejectDraft(slug) {
+    setDrafts((ds) => ds.filter((d) => d.slug !== slug));
+  }
+
+  function updateDraftText(slug, text) {
+    setDrafts((ds) => ds.map((d) => (d.slug === slug ? { ...d, text } : d)));
+  }
+
+  const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Løp uten beskrivelse</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Genererer et utkast basert på navn, sted, distanse og type — ikke ekte løype-kunnskap.
+          Les gjennom og rediger før du lagrer, spesielt på løp du kjenner godt.
+        </p>
+        {loading ? (
+          <p className="text-sm text-gray-400">Laster…</p>
+        ) : missing.length === 0 ? (
+          <p className="text-sm text-gray-400">Alle løp har en beskrivelse. 🎉</p>
+        ) : (
+          <>
+            <p className="text-sm text-gray-600 mb-3">{missing.length} løp mangler beskrivelse.</p>
+            <button
+              onClick={generateAll}
+              disabled={generating}
+              className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+            >
+              {generating ? `Genererer… ${progress.done}/${progress.total}` : `Generer beskrivelser (${missing.length})`}
+            </button>
+            {genError && <p className="text-sm text-red-600 mt-2">{genError}</p>}
+          </>
+        )}
+      </div>
+
+      {drafts.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Utkast til gjennomgang ({drafts.length})</h2>
+          <div className="space-y-3">
+            {drafts.map((d) => (
+              <div key={d.slug} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900 mb-2">{d.name}</p>
+                <textarea
+                  value={d.text}
+                  onChange={(e) => updateDraftText(d.slug, e.target.value)}
+                  rows={3}
+                  className={inputCls}
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => saveDraft(d.slug, d.text)}
+                    disabled={savingSlug === d.slug}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition disabled:opacity-40"
+                  >
+                    {savingSlug === d.slug ? "Lagrer…" : "Lagre"}
+                  </button>
+                  <button
+                    onClick={() => rejectDraft(d.slug)}
+                    disabled={savingSlug === d.slug}
+                    className="px-3 py-1.5 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    Avvis
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DIGEST_TYPE_LABEL = { result: "Resultat", race_update: "Oppdatering", new_race: "Nytt løp" };
 const DIGEST_TYPE_STYLE = {
   result: "bg-blue-50 text-blue-600 border-blue-200",
@@ -2446,6 +2604,7 @@ export default function AdminPage() {
                 { value: "shop", label: "Shop" },
                 { value: "concepts", label: "Konsepter" },
                 { value: "digest", label: "Oppdateringer" },
+                { value: "descriptions", label: "Beskrivelser" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (
                 <button
@@ -2522,6 +2681,7 @@ export default function AdminPage() {
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "concepts" && <ProductDevTab adminPw={adminPw} />}
           {tab === "digest" && <DigestTab adminPw={adminPw} />}
+          {tab === "descriptions" && <DescriptionsTab adminPw={adminPw} />}
           {tab === "dev" && <DevTab adminPw={adminPw} />}
           {tab === "races" && selected && (
             <div className="max-w-2xl">

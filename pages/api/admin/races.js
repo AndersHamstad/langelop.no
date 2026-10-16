@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabase
     .from("races")
-    .select("id, slug, name, date, location, region, url, status_note, description, image_url")
+    .select("id, slug, name, date, location, region, url, status_note, description, image_url, distance, type")
     .order("date", { ascending: true });
 
   if (error) return res.status(500).json({ error: error.message });
