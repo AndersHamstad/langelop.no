@@ -3,6 +3,16 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-10-16",
+    title: "Shop-promo på løps- og artikkelsider (test-branch)",
+    items: [
+      "Ny ShopPromo-komponent: lite produktkort som lenker til /shop, satt inn rett etter «Om løpet» på løpssider og etter innholdet på artikler",
+      "Lenken har ?ref=race-page / ?ref=artikkel for å kunne se i analytics hvilken plassering som faktisk driver trafikk",
+      "Oppdaget at components/ArticleLayout.js ikke brukes noe sted — artikler rendres via pages/artikler/[slug].js direkte",
+      "Pushet kun til feature-branchen for forhåndsvisning — ikke merget til main ennå",
+    ],
+  },
+  {
     date: "2026-10-13",
     title: "SEO mot 2027 + nyhetsbrev-popup oppdatert",
     items: [

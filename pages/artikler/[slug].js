@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { nb } from "date-fns/locale";
 import { ArrowLeft, Clock } from "lucide-react";
 import ArticleComments from "../../components/ArticleComments";
+import ShopPromo from "../../components/ShopPromo";
 
 const ARTICLES_DIR = path.join(process.cwd(), "content", "artikler");
 
@@ -116,6 +117,10 @@ export default function Artikkel({ source, frontMatter, readTime, slug }) {
             prose-li:text-gray-700"
           >
             <MDXRemote {...source} />
+          </div>
+
+          <div className="mt-10">
+            <ShopPromo source="artikkel" />
           </div>
 
           <ArticleComments slug={slug} />

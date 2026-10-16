@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Script from 'next/script';
 import Link from 'next/link';
 import SmartImage from '../components/SmartImage';
+import ShopPromo from '../components/ShopPromo';
 import { supabase } from '../lib/supabaseClient';
 import { buildRaceJsonLd } from '../lib/structuredData';
 import { useState, useRef, useEffect } from 'react';
@@ -510,6 +511,9 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                   <p className="text-sm text-gray-400">Ingen beskrivelse lagt inn ennå.</p>
                 )}
               </div>
+
+              {/* Shop-promo */}
+              <ShopPromo source="race-page" />
 
               {/* Løypekart */}
               <div className="bg-white rounded-2xl shadow-sm p-6">
