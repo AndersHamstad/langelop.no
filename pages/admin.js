@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-10-16",
+    title: "Legg til tredje Gemini-modell i beskrivelsesgenerering",
+    items: [
+      "503 «modellen er overbelastet» på gemini-3.6-flash — samme kjente mønster som i Oppdateringer-fanen",
+      "Lagt til gemini-2.0-flash som tredje fallback, og justert timeout per forsøk til 18s slik at alle tre forsøkene får plass innenfor 60s-budsjettet",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Fiks timeout ved generering av løpsbeskrivelser",
     items: [
       "«This operation was aborted» — min egen 8s-grense mot Gemini var for stram til å generere 8 beskrivelser i ett kall, ikke et Gemini-problem",

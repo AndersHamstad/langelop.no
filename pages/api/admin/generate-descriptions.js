@@ -46,7 +46,7 @@ async function callGemini(model, userMessage) {
         generationConfig: { responseMimeType: "application/json" },
       }),
     },
-    25000
+    18000
   );
   if (!geminiRes.ok) {
     const errText = await geminiRes.text();
@@ -57,7 +57,7 @@ async function callGemini(model, userMessage) {
   return geminiRes.json();
 }
 
-const MODELS = ["gemini-3.6-flash", "gemini-flash-latest"];
+const MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.0-flash"];
 const RETRYABLE = [404, 503];
 
 async function generateBatch(races) {
