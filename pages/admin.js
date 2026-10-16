@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-10-16",
+    title: "Flyttet shop-promo forbi kommentarfeltet på løpssider",
+    items: [
+      "Promoen rett etter «Om løpet» så rar ut på løp uten utfylt beskrivelse — virket som siden hovedsakelig var laget for å pushe egne produkter",
+      "Flyttet til etter kommentarfeltet (etter hero/fakta/beskrivelse/løypekart/resultater/kommentarer), slik at den alltid kommer etter reelt innhold uansett hvor mye info løpet har",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Shop-promo på løps- og artikkelsider (test-branch)",
     items: [
       "Ny ShopPromo-komponent: lite produktkort som lenker til /shop, satt inn rett etter «Om løpet» på løpssider og etter innholdet på artikler",

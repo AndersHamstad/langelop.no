@@ -512,9 +512,6 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                 )}
               </div>
 
-              {/* Shop-promo */}
-              <ShopPromo source="race-page" />
-
               {/* Løypekart */}
               <div className="bg-white rounded-2xl shadow-sm p-6">
                 <h2 className="text-base font-bold text-gray-900 mb-4">
@@ -649,6 +646,9 @@ export default function RacePage({ race, comments, results, nearbyRaces }) {
                   <CommentForm raceId={race.id} />
                 </div>
               </div>
+
+              {/* Shop-promo */}
+              <ShopPromo source="race-page" />
 
               {/* Løp i nærheten */}
               {nearbyRaces.length > 0 && (
