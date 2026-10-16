@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-10-16",
+    title: "Fiks fanemeny i admin — 7 faner ble klemt sammen",
+    items: [
+      "Fanelisten brukte flex-1 i én rad, så med 7 faner (inkl. nye Oppdateringer/Beskrivelser) ble lange navn som «Beskrivelser» trolig uleselige/vanskelig å trykke på",
+      "Byttet til et 2-kolonners grid med egne avrundede knapper per fane — skalerer bedre etter hvert som flere faner legges til",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Ny Beskrivelser-fane: bulk-generer løpsbeskrivelser",
     items: [
       "Viser alle løp uten beskrivelse, med «Generer beskrivelser»-knapp som lager AI-utkast basert på navn/sted/distanse/type",
@@ -2597,7 +2605,7 @@ export default function AdminPage() {
                 ✕
               </button>
             </div>
-            <div className="flex rounded-xl overflow-hidden border border-gray-200">
+            <div className="grid grid-cols-2 gap-1.5">
               {[
                 { value: "races", label: "Løp" },
                 { value: "newsletters", label: "Brev" },
@@ -2610,7 +2618,7 @@ export default function AdminPage() {
                 <button
                   key={t.value}
                   onClick={() => { setTab(t.value); if (t.value !== "races") setMobileMenuOpen(false); }}
-                  className={`flex-1 py-2 px-1 text-sm font-medium border-r border-gray-200 last:border-r-0 transition ${tab === t.value ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                  className={`py-2 px-2 rounded-lg text-sm font-medium border transition text-center ${tab === t.value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
                 >
                   {t.label}
                 </button>
