@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-20",
+    title: "Visuell overhaling av sokker-til-arrangører-siden",
+    items: [
+      "Første utkast så for wireframe-aktig ut — bytta emoji-i-boks til ekte lucide-ikoner i fargede sirkler",
+      "Mørk hero med gradient-tekstur og større produktbilde (samme stil som shop-siden), to-kolonners skjema-seksjon med mørk pitch-side + lyst skjema",
+    ],
+  },
+  {
+    date: "2026-11-20",
     title: "Ny side: tilpassede sokker for løpsarrangører",
     items: [
       "/sokker-til-arrangorer — landingsside for arrangører som vil ha egne sokker med løpets logo til deltakerne, med skjema for uforpliktende tilbud",
