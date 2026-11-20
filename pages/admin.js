@@ -3,6 +3,17 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-11-20",
+    title: "Ny side: tilpassede sokker for løpsarrangører",
+    items: [
+      "/sokker-til-arrangorer — landingsside for arrangører som vil ha egne sokker med løpets logo til deltakerne, med skjema for uforpliktende tilbud",
+      "Ny tabell sock_inquiries + API-rute /api/sock-inquiry, samme mønster som race-submission.js (lagrer + sender e-postvarsel)",
+      "Lenket fra /for-arrangorer (ny boks) og footer",
+      "Lagt til i sitemap.xml, og sock_inquiries i den daglige rapporten",
+      "Pushet kun til feature-branchen for forhåndsvisning",
+    ],
+  },
+  {
     date: "2026-10-16",
     title: "Legg til tredje Gemini-modell i beskrivelsesgenerering",
     items: [

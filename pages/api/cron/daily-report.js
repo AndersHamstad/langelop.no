@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [subscribers, totalSubscribersRes, utstyrReviews, produktReviews, raceSubmissions, raceUpdates, raceComments, articleComments] =
+  const [subscribers, totalSubscribersRes, utstyrReviews, produktReviews, raceSubmissions, raceUpdates, raceComments, articleComments, sockInquiries] =
     await Promise.all([
       supabase.from('newsletter_subscribers').select('email, created_at').gte('created_at', since),
       supabase.from('newsletter_subscribers').select('email'),
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
       supabase.from('race_updates').select('lop_navn, endring, kontakt_epost, created_at').gte('created_at', since),
       supabase.from('comments').select('race_id, name, comment, created_at').gte('created_at', since),
       supabase.from('article_comments').select('article_slug, name, comment, created_at').gte('created_at', since),
+      supabase.from('sock_inquiries').select('race_name, race_date, estimated_quantity, contact_name, contact_email, created_at').gte('created_at', since),
     ]);
 
   // Løpsnavn for kommentarene (comments-tabellen har kun race_id)
@@ -49,7 +50,8 @@ export default async function handler(req, res) {
     (raceSubmissions.data?.length || 0) +
     (raceUpdates.data?.length || 0) +
     (raceComments.data?.length || 0) +
-    (articleComments.data?.length || 0);
+    (articleComments.data?.length || 0) +
+    (sockInquiries.data?.length || 0);
 
   if (total === 0 && !forceSend) {
     console.log('Ingen nye hendelser siste 24t – hopper over e-post.');
@@ -112,6 +114,10 @@ export default async function handler(req, res) {
 
       ${section('', 'Nye artikkelkommentarer', articleComments.data,
         (r) => [`<b>${r.article_slug}</b>`, r.name, r.comment]
+      )}
+
+      ${section('', 'Sokkehenvendelser fra arrangører', sockInquiries.data,
+        (r) => [`<b>${r.race_name}</b>`, r.race_date || '–', r.estimated_quantity || '–', `${r.contact_name}<br/>${r.contact_email}`]
       )}
 
       <p style="margin-top:32px;font-size:11px;color:#bbb;">

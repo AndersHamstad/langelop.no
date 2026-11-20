@@ -10,6 +10,8 @@ const STATIC_PAGES = [
   { url: '/artikler/liste', priority: '0.8', changefreq: 'weekly' },
   { url: '/om-oss', priority: '0.5', changefreq: 'monthly' },
   { url: '/shop', priority: '0.6', changefreq: 'weekly' },
+  { url: '/for-arrangorer', priority: '0.6', changefreq: 'monthly' },
+  { url: '/sokker-til-arrangorer', priority: '0.6', changefreq: 'monthly' },
 ];
 
 function generateSitemap(races, articleSlugs) {

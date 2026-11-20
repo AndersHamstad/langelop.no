@@ -267,6 +267,19 @@ export default function ForArrangorerPage() {
             </a>
           </div>
 
+          {/* Sokker til deltakerne */}
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
+            <div className="text-2xl mb-2">🧦</div>
+            <h3 className="text-base font-bold text-gray-900 mb-1">Vil du gi deltakerne tilpassede sokker?</h3>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              Vi designer og produserer løpesokker med løpets eget logo — et goodiebag-produkt som varer lenger enn en t-skjorte.
+            </p>
+            <a href="/sokker-til-arrangorer"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition">
+              Se tilpassede sokker →
+            </a>
+          </div>
+
         </div>
       </div>
     </>

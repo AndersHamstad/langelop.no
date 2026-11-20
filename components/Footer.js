@@ -63,6 +63,12 @@ export default function Footer() {
             >
               Oppdater eksisterende løp →
             </Link>
+            <Link
+              href="/sokker-til-arrangorer"
+              className="text-sm text-gray-400 hover:text-white transition pl-1"
+            >
+              Tilpassede sokker til deltakerne →
+            </Link>
           </div>
         </div>
 
