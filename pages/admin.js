@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "For-arrangører: Fremhev ditt løp-kortet er nå fylt gult og ligger øverst",
+    items: [
+      "Flyttet 'Fremhev ditt løp' fra tredje til første plass blant de fire kortene",
+      "Nytt 'highlighted'-flagg på ActionCard gir fylt amber-400-bakgrunn i stedet for hvit med skygge, så kortet skiller seg tydelig ut fra de tre andre",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Fiks: skjemafelt klemt sammen på mobil (sokker + for-arrangører)",
     items: [
       "Dato/antall, sted/fylke og navn/e-post-feltene lå i en fast 2-kolonners grid uten mobil-breakpoint — ble presset sammen på smal skjerm, bl.a. gjorde datofeltets tekst usynlig",

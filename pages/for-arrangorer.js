@@ -23,24 +23,28 @@ function Field({ label, required, children }) {
 
 const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition";
 
-function ActionCard({ icon: Icon, title, text, onClick, isOpen, href }) {
+function ActionCard({ icon: Icon, title, text, onClick, isOpen, href, highlighted }) {
   const inner = (
     <>
-      <Icon size={24} strokeWidth={1.75} className="text-amber-600 mb-5" />
-      <h3 className="text-base font-bold text-gray-900 mb-1.5">{title}</h3>
-      <p className="text-sm text-gray-500 leading-relaxed">{text}</p>
-      <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 mt-5">
+      <Icon size={24} strokeWidth={1.75} className={`mb-5 ${highlighted ? 'text-amber-900' : 'text-amber-600'}`} />
+      <h3 className={`text-base font-bold mb-1.5 ${highlighted ? 'text-amber-950' : 'text-gray-900'}`}>{title}</h3>
+      <p className={`text-sm leading-relaxed ${highlighted ? 'text-amber-900/80' : 'text-gray-500'}`}>{text}</p>
+      <span className={`inline-flex items-center gap-1 text-sm font-semibold mt-5 ${highlighted ? 'text-amber-950' : 'text-amber-700'}`}>
         {href ? 'Se tilbudet' : isOpen ? 'Lukk' : 'Åpne skjema'}
         <ArrowRight size={14} className={`transition-transform ${isOpen ? 'rotate-90' : ''}`} />
       </span>
     </>
   );
 
+  const highlightCls = highlighted
+    ? 'bg-amber-400 shadow-md hover:shadow-lg hover:bg-amber-300'
+    : 'bg-white shadow-sm hover:shadow-md';
+
   if (href) {
     return (
       <Link
         href={href}
-        className="text-left bg-white rounded-2xl shadow-sm p-7 md:p-8 hover:shadow-md transition block"
+        className={`text-left rounded-2xl p-7 md:p-8 transition block ${highlightCls}`}
       >
         {inner}
       </Link>
@@ -50,9 +54,9 @@ function ActionCard({ icon: Icon, title, text, onClick, isOpen, href }) {
   return (
     <button
       onClick={onClick}
-      className={`text-left bg-white rounded-2xl shadow-sm p-7 md:p-8 transition ${
-        isOpen ? 'ring-2 ring-amber-300 shadow-md' : 'hover:shadow-md'
-      }`}
+      className={`text-left rounded-2xl p-7 md:p-8 transition ${highlightCls} ${
+        isOpen && !highlighted ? 'ring-2 ring-amber-300 shadow-md' : ''
+      } ${isOpen && highlighted ? 'ring-2 ring-amber-900/20' : ''}`}
     >
       {inner}
     </button>
@@ -156,6 +160,14 @@ export default function ForArrangorerPage() {
         <div className="max-w-5xl mx-auto">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <ActionCard
+              icon={Star}
+              title="Fremhev ditt løp"
+              text="Vises øverst på forsiden med stort bilde og direkte lenke."
+              onClick={() => toggle('highlight')}
+              isOpen={open === 'highlight'}
+              highlighted
+            />
+            <ActionCard
               icon={FilePlus2}
               title="Meld inn nytt løp"
               text="Finner du ikke løpet ditt på siden? Legg det til her."
@@ -168,13 +180,6 @@ export default function ForArrangorerPage() {
               text="Feil eller utdatert info på et løp som allerede er listet?"
               onClick={() => toggle('update')}
               isOpen={open === 'update'}
-            />
-            <ActionCard
-              icon={Star}
-              title="Fremhev ditt løp"
-              text="Vises øverst på forsiden med stort bilde og direkte lenke."
-              onClick={() => toggle('highlight')}
-              isOpen={open === 'highlight'}
             />
             <ActionCard
               icon={Footprints}
