@@ -4,6 +4,17 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Ny Innboks-fane: alt som venter, uavhengig av e-post",
+    items: [
+      "race_submissions, race_updates og sock_inquiries hadde ingen admin-UI i det hele tatt — kun synlige i den daglige e-postrapporten i 24t, deretter usynlige uten å gå inn i Supabase direkte",
+      "comments, produkt_reviews og utstyr_reviews har en 'approved'-kolonne som styrer hva som vises offentlig, men kunne kun godkjennes ved å redigere raden manuelt i Supabase (produkt-review-eposten sa det bokstavelig til brukeren)",
+      "Ny Innboks-fane viser alle seks køene med Godkjenn/Avvis eller Fjern-knapper, pluss en live badge på fanen med antall ventende saker — synlig med en gang man logger inn, ikke bare når man klikker inn på fanen",
+      "Nye API-ruter: /api/admin/inbox (GET, henter alt) og /api/admin/inbox-action (POST, hvitlistet tabell+handling)",
+      "Kunne ikke kjøre full live-test mot Supabase lokalt (ingen .env.local med nøkler i denne sandboksen) — testet syntaks og logikk mot faktisk tabellskjema via Supabase MCP, men selve admin-UI-et bør sjekkes i preview før merge",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Sokker-til-arrangører: la til andre mockup som fargevariant i hero",
     items: [
       "La til den sorte sokke-varianten (samme logo) som et mindre, forskjøvet kort bak hovedbildet, for å vise fargevalg uten ny seksjon",
@@ -1434,6 +1445,256 @@ function ProductDevTab({ adminPw }) {
   );
 }
 
+function InboxTab({ adminPw, inbox, setInbox }) {
+  const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (inbox) return;
+    fetch("/api/admin/inbox", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setInbox(data))
+      .catch((err) => setError(err.message));
+  }, [adminPw, inbox, setInbox]);
+
+  async function act(table, id, action) {
+    setBusyId(id);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/inbox-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+        body: JSON.stringify({ table, id, action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Ukjent feil");
+      setInbox((prev) => {
+        const key = Object.keys(prev).find((k) => Array.isArray(prev[k]) && prev[k].some((r) => r.id === id));
+        if (!key) return prev;
+        return { ...prev, [key]: prev[key].filter((r) => r.id !== id) };
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusyId(null);
+  }
+
+  const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+  const fmt = (d) => new Date(d).toLocaleDateString("nb-NO", { dateStyle: "medium" });
+
+  if (!inbox) return <p className="text-sm text-gray-400">Laster innboks…</p>;
+
+  const totalPending =
+    inbox.raceSubmissions.length + inbox.raceUpdates.length + inbox.sockInquiries.length +
+    inbox.comments.length + inbox.produktReviews.length + inbox.utstyrReviews.length;
+
+  return (
+    <div className="max-w-3xl space-y-10">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Innboks</h2>
+        <p className="text-sm text-gray-500">
+          Alt som venter på deg, uavhengig av om den daglige e-postrapporten kommer frem eller ikke.
+          {totalPending === 0 && " Ingenting venter akkurat nå. 🎉"}
+        </p>
+        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      </div>
+
+      {inbox.raceSubmissions.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Nye løp-forslag ({inbox.raceSubmissions.length})</h3>
+          <div className="space-y-3">
+            {inbox.raceSubmissions.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">{r.navn}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {r.dato} · {r.distanse} · {r.sted}{r.region ? `, ${r.region}` : ""}
+                </p>
+                {r.nettside && (
+                  <p className="text-xs mt-1"><a href={r.nettside} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline">{r.nettside}</a></p>
+                )}
+                {r.beskrivelse && <p className="text-sm text-gray-600 mt-2">{r.beskrivelse}</p>}
+                <p className="text-xs text-gray-400 mt-2">{r.kontakt_navn} · {r.kontakt_epost} · {fmt(r.created_at)}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("race_submissions", r.id, "dismiss")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  >
+                    Merk som behandlet / fjern
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.raceUpdates.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Endringsforslag ({inbox.raceUpdates.length})</h3>
+          <div className="space-y-3">
+            {inbox.raceUpdates.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">{r.lop_navn}</p>
+                <p className="text-sm text-gray-600 mt-2">{r.endring}</p>
+                <p className="text-xs text-gray-400 mt-2">{r.kontakt_epost} · {fmt(r.created_at)}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("race_updates", r.id, "dismiss")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  >
+                    Merk som behandlet / fjern
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.sockInquiries.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Sokkehenvendelser ({inbox.sockInquiries.length})</h3>
+          <div className="space-y-3">
+            {inbox.sockInquiries.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">{r.race_name}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {r.race_date || "ingen dato oppgitt"} · ca. {r.estimated_quantity || "?"} stk
+                </p>
+                {r.message && <p className="text-sm text-gray-600 mt-2">{r.message}</p>}
+                <p className="text-xs text-gray-400 mt-2">
+                  {r.contact_name} · {r.contact_email}{r.contact_phone ? ` · ${r.contact_phone}` : ""} · {fmt(r.created_at)}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("sock_inquiries", r.id, "dismiss")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  >
+                    Merk som behandlet / fjern
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.comments.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Løpskommentarer til godkjenning ({inbox.comments.length})</h3>
+          <div className="space-y-3">
+            {inbox.comments.map((c) => (
+              <div key={c.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">
+                  {c.race ? <a href={`/${c.race.slug}`} target="_blank" rel="noreferrer" className="hover:underline">{c.race.name}</a> : `Løp-id ${c.race_id}`}
+                </p>
+                <p className="text-sm text-gray-600 mt-2">{c.comment}</p>
+                <p className="text-xs text-gray-400 mt-2">{c.name}{c.email ? ` · ${c.email}` : ""}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("comments", c.id, "approve")}
+                    disabled={busyId === c.id}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50"
+                  >
+                    Godkjenn
+                  </button>
+                  <button
+                    onClick={() => act("comments", c.id, "reject")}
+                    disabled={busyId === c.id}
+                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    Avvis
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.produktReviews.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Sokke-anmeldelser til godkjenning ({inbox.produktReviews.length})</h3>
+          <div className="space-y-3">
+            {inbox.produktReviews.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">{r.navn} <span className="text-amber-500 font-normal ml-1">{stars(r.rating)}</span></p>
+                {r.kommentar && <p className="text-sm text-gray-600 mt-2">{r.kommentar}</p>}
+                <p className="text-xs text-gray-400 mt-2">{r.produkt_id} · {fmt(r.created_at)}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("produkt_reviews", r.id, "approve")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50"
+                  >
+                    Godkjenn
+                  </button>
+                  <button
+                    onClick={() => act("produkt_reviews", r.id, "reject")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    Avvis
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.utstyrReviews.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Utstyrsanmeldelser til godkjenning ({inbox.utstyrReviews.length})</h3>
+          <div className="space-y-3">
+            {inbox.utstyrReviews.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="font-semibold text-sm text-gray-900">{r.navn} <span className="text-amber-500 font-normal ml-1">{stars(r.rating)}</span></p>
+                {r.kommentar && <p className="text-sm text-gray-600 mt-2">{r.kommentar}</p>}
+                <p className="text-xs text-gray-400 mt-2">{r.produkt_id} · {fmt(r.created_at)}</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => act("utstyr_reviews", r.id, "approve")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50"
+                  >
+                    Godkjenn
+                  </button>
+                  <button
+                    onClick={() => act("utstyr_reviews", r.id, "reject")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    Avvis
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {inbox.articleComments.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Siste artikkelkommentarer</h3>
+          <p className="text-xs text-gray-400 mb-3">Disse publiseres automatisk uten godkjenning — listet kun til info.</p>
+          <div className="space-y-2">
+            {inbox.articleComments.slice(0, 10).map((c) => (
+              <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-4">
+                <p className="text-xs text-gray-400">{c.article_slug} · {c.name} · {fmt(c.created_at)}</p>
+                <p className="text-sm text-gray-600 mt-1">{c.comment}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function DescriptionsTab({ adminPw }) {
   const [races, setRaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2592,6 +2853,7 @@ export default function AdminPage() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [inbox, setInbox] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("adminPw");
@@ -2608,6 +2870,21 @@ export default function AdminPage() {
         setLoading(false);
       });
   }, [adminPw]);
+
+  useEffect(() => {
+    if (!adminPw) return;
+    // Hentes uavhengig av hvilken fane som er åpen, slik at Innboks-badgen
+    // viser ventende saker med en gang du logger inn — ikke bare når du klikker inn på fanen.
+    fetch("/api/admin/inbox", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setInbox(data))
+      .catch(() => {});
+  }, [adminPw]);
+
+  const inboxPendingCount = inbox
+    ? inbox.raceSubmissions.length + inbox.raceUpdates.length + inbox.sockInquiries.length +
+      inbox.comments.length + inbox.produktReviews.length + inbox.utstyrReviews.length
+    : 0;
 
   function handleAuth(pw) {
     setAdminPw(pw);
@@ -2687,6 +2964,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 gap-1.5">
               {[
                 { value: "races", label: "Løp" },
+                { value: "inbox", label: "Innboks", badge: inboxPendingCount },
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
                 { value: "concepts", label: "Konsepter" },
@@ -2697,9 +2975,14 @@ export default function AdminPage() {
                 <button
                   key={t.value}
                   onClick={() => { setTab(t.value); if (t.value !== "races") setMobileMenuOpen(false); }}
-                  className={`py-2 px-2 rounded-lg text-sm font-medium border transition text-center ${tab === t.value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+                  className={`relative py-2 px-2 rounded-lg text-sm font-medium border transition text-center ${tab === t.value ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
                 >
                   {t.label}
+                  {!!t.badge && (
+                    <span className={`ml-1.5 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[10px] font-bold ${tab === t.value ? "bg-white text-gray-900" : "bg-amber-500 text-white"}`}>
+                      {t.badge}
+                    </span>
+                  )}
                 </button>
               ))}</div>
           </div>
@@ -2764,6 +3047,7 @@ export default function AdminPage() {
 
         {/* Hovedinnhold */}
         <div className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+          {tab === "inbox" && <InboxTab adminPw={adminPw} inbox={inbox} setInbox={setInbox} />}
           {tab === "newsletters" && <NewsletterTab adminPw={adminPw} />}
           {tab === "shop" && <ShopTab adminPw={adminPw} />}
           {tab === "concepts" && <ProductDevTab adminPw={adminPw} />}
