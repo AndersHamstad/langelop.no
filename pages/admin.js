@@ -4,6 +4,16 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Sokker-til-arrangører: visuelt løft (farge, tekstur, form)",
+    items: [
+      "Bytta standard Tailwind-blå til en varm rav/amber-aksent gjennom hele siden",
+      "La til en håndtegnet topografisk konturlinje-bakgrunn i hero i stedet for flate gradient-sirkler",
+      "Produktbildet har nå en skrå avskåret kant (clip-path) og en forskjøvet, lett rotert rav-ramme bak seg, i stedet for et rett rektangel",
+      "Testet i dev-server med Playwright-skjermbilder (desktop + mobil) før commit",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Sokker-til-arrangører: endret fokus i teksten",
     items: [
       "Fjerna nedsnakking av t-skjorter/caps/buff og 'ikke et sideprosjekt'-vinklingen",
