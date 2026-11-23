@@ -202,7 +202,7 @@ export default function ForArrangorerPage() {
                           onChange={(e) => setNyForm(f => ({ ...f, navn: e.target.value }))} required />
                       </Field>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Dato" required>
                           <input type="date" className={inputCls} value={nyForm.dato}
                             onChange={(e) => setNyForm(f => ({ ...f, dato: e.target.value }))} required />
@@ -214,7 +214,7 @@ export default function ForArrangorerPage() {
                         </Field>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Sted/kommune" required>
                           <input className={inputCls} value={nyForm.sted}
                             onChange={(e) => setNyForm(f => ({ ...f, sted: e.target.value }))} required />
@@ -242,7 +242,7 @@ export default function ForArrangorerPage() {
 
                       <div className="border-t border-gray-100 pt-4">
                         <p className="text-xs text-gray-400 mb-3">Kontaktinformasjon (vises ikke offentlig)</p>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <Field label="Ditt navn" required>
                             <input className={inputCls} value={nyForm.kontakt_navn}
                               onChange={(e) => setNyForm(f => ({ ...f, kontakt_navn: e.target.value }))} required />

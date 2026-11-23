@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Fiks: skjemafelt klemt sammen på mobil (sokker + for-arrangører)",
+    items: [
+      "Dato/antall, sted/fylke og navn/e-post-feltene lå i en fast 2-kolonners grid uten mobil-breakpoint — ble presset sammen på smal skjerm, bl.a. gjorde datofeltets tekst usynlig",
+      "La til sm:-breakpoint slik at feltene stables i én kolonne på mobil og blir 2-kolonners fra sm og oppover, på begge sider",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "For-arrangører-siden: ryddet opp i for mange lag / lite luft",
     items: [
       "Fjerna ikon-chip-boksen inni kortene (ikon lå i en fargeboks, inni en kortboks, inni en seksjonsboks) — ikonet står nå fritt i amber-farge",

@@ -281,7 +281,7 @@ export default function SokkerTilArrangorer() {
                       onChange={(e) => setForm((f) => ({ ...f, race_name: e.target.value }))} required />
                   </Field>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Løpsdato">
                       <input type="date" className={inputCls} value={form.race_date}
                         onChange={(e) => setForm((f) => ({ ...f, race_date: e.target.value }))} />
@@ -293,7 +293,7 @@ export default function SokkerTilArrangorer() {
                     </Field>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Kontaktperson" required>
                       <input className={inputCls} value={form.contact_name}
                         onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))} required />
