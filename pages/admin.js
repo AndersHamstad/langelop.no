@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Sokker-til-arrangører: endret fokus i teksten",
+    items: [
+      "Fjerna nedsnakking av t-skjorter/caps/buff og 'ikke et sideprosjekt'-vinklingen",
+      "Ny 'Hvorfor sokker'-seksjon: goodiebag-bruk, salg som egen inntektskilde, og at vi står for design/innkjøp/kvalitet",
+      "Rettet hero og meta-tekst til å være rett-på-sak om hva Langeløp faktisk leverer",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Sokker-til-arrangører: fjerna duplisert ikon-grid og omskrev teksten",
     items: [
       "Slo sammen 'Slik fungerer det' og 'Hvorfor sokker' — to like ikon-grid på rad var det tydeligste 'AI-generert'-signalet",

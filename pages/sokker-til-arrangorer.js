@@ -4,20 +4,20 @@ import Image from 'next/image';
 import { useState } from 'react';
 import {
   PenLine, Palette, CheckCircle2, PackageCheck,
-  Repeat2, Mountain, Ruler, ArrowRight,
+  Gift, ShoppingBag, ShieldCheck, ArrowRight,
 } from 'lucide-react';
 
 const STEG = [
   { icon: PenLine, tittel: 'Fortell oss om løpet', tekst: 'Navn, dato og omtrent hvor mange som løper. Tar to minutter å fylle ut.' },
   { icon: Palette, tittel: 'Vi setter opp et forslag', tekst: 'Vi legger logoen deres på sokken og sender et bilde — før noe som helst er bestemt.' },
-  { icon: CheckCircle2, tittel: 'Dere sier ja, nei eller juster', tekst: 'Liker dere ikke forslaget, prøver vi igjen. Ingenting trykkes før dere har godkjent design, antall og pris.' },
-  { icon: PackageCheck, tittel: 'Levert før løpsdagen', tekst: 'Vi selger egne sokker i nettbutikken, så vi vet hvor lang tid produksjon og frakt faktisk tar.' },
+  { icon: CheckCircle2, tittel: 'Dere sier ja, nei eller juster', tekst: 'Liker dere ikke forslaget, prøver vi igjen. Ingenting bestilles før dere har godkjent design, antall og pris.' },
+  { icon: PackageCheck, tittel: 'Levert før løpsdagen', tekst: 'Vi tar hånd om innkjøp og produksjon, og leverer ferdig sokk klar til bruk før løpsdagen.' },
 ];
 
 const HVORFOR = [
-  { icon: Repeat2, tittel: 'Brukt uke etter uke', tekst: 'Capsen og buffen havner i skuffen. Løpesokker er noe folk faktisk har på seg neste gang de trener.' },
-  { icon: Mountain, tittel: 'Logoen følger med på hver løpetur', tekst: 'Ikke bare synlig på startlinjen — løpets navn er fysisk med deltakeren hver gang de trener.' },
-  { icon: Ruler, tittel: 'Vi justerer etter budsjettet deres', tekst: 'Fra 50 par til et par tusen. Vi finner en løsning som passer løpet deres, ikke en fast pakke.' },
+  { icon: Gift, tittel: 'Et løft i goodiebagen', tekst: 'Noe deltakerne faktisk setter pris på å finne, med løpets egen logo på.' },
+  { icon: ShoppingBag, tittel: 'En ekstra inntektskilde', tekst: 'Selg sokkene i egen nettbutikk eller på standen — et produkt ingen andre løp har.' },
+  { icon: ShieldCheck, tittel: 'Vi står for kvaliteten', tekst: 'Design, innkjøp og produksjon er vårt ansvar, fra første skisse til ferdig sokk.' },
 ];
 
 const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition";
@@ -66,13 +66,13 @@ export default function SokkerTilArrangorer() {
         <title>Tilpassede løpesokker for arrangører | Langeløp.no</title>
         <meta
           name="description"
-          content="Gi deltakerne dine tilpassede løpesokker med løpets eget logo — et goodiebag-produkt som varer lenger enn en t-skjorte. Få et uforpliktende tilbud."
+          content="Vi designer, bestiller og leverer tilpassede løpesokker med løpets eget logo — til goodiebag eller salg i egne kanaler. Få et uforpliktende tilbud."
         />
         <link rel="canonical" href="https://www.langelop.no/sokker-til-arrangorer" />
         <meta property="og:title" content="Tilpassede løpesokker for arrangører | Langeløp.no" />
         <meta
           property="og:description"
-          content="Gi deltakerne dine tilpassede løpesokker med løpets eget logo — et goodiebag-produkt som varer lenger enn en t-skjorte."
+          content="Vi designer, bestiller og leverer tilpassede løpesokker med løpets eget logo — til goodiebag eller salg i egne kanaler."
         />
         <meta property="og:type" content="website" />
       </Head>
@@ -93,12 +93,12 @@ export default function SokkerTilArrangorer() {
                 For løpsarrangører
               </p>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-[1.1] mb-5">
-                T-skjorten ender i skuffen.<br /><span className="text-blue-400">Sokkene blir brukt.</span>
+                Tilpassede løpesokker<br />til <span className="text-blue-400">løpet deres</span>
               </h1>
               <p className="text-gray-400 text-base md:text-lg max-w-lg leading-relaxed mb-8">
-                Vi lager allerede løpesokker som selges i vår egen nettbutikk til norske
-                ultraløpere. Nå kan dere få samme sokk med løpets eget logo på — til
-                utdeling i løpsbagen, i målområdet, eller som en takk til de frivillige.
+                Vi designer, bestiller og leverer løpesokker med løpets eget logo.
+                Dere bestemmer bruken — del dem ut i goodiebagen, eller selg dem i
+                egen nettbutikk eller på standen.
               </p>
               <a href="#skjema"
                 className="inline-flex items-center gap-2 bg-white text-gray-900 font-semibold px-6 py-3.5 rounded-xl text-sm hover:bg-gray-100 transition shadow-lg shadow-black/20">
@@ -126,9 +126,8 @@ export default function SokkerTilArrangorer() {
       {/* Troverdighet */}
       <div className="bg-white py-5 px-4 border-b border-gray-100">
         <p className="text-center text-sm text-gray-500 max-w-2xl mx-auto">
-          Dette er ikke et sideprosjekt — sjekk{' '}
-          <a href="/shop" className="text-blue-600 font-medium hover:underline">nettbutikken vår</a>
-          {' '}om du vil se sokken vi faktisk produserer og selger.
+          Samme design- og produksjonsprosess som sokkene vi selger i{' '}
+          <a href="/shop" className="text-blue-600 font-medium hover:underline">vår egen nettbutikk</a>.
         </p>
       </div>
 
@@ -163,12 +162,12 @@ export default function SokkerTilArrangorer() {
         <div className="max-w-5xl mx-auto grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-4">
-              Hvorfor sokker, og ikke<br />nok en caps eller buff?
+              Fleksibelt, uansett<br />hvordan dere vil bruke dem
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Det er fort gjort å drukne i goodiebag-produkter ingen egentlig bruker.
-              Sokker er annerledes — ikke fordi de er et smartere produkt, men fordi
-              de faktisk blir slitt ut.
+              Enten sokkene skal ut i goodiebagen eller selges som eget produkt,
+              tar vi hånd om design, innkjøp og kvalitet — fra første skisse til
+              ferdig sokk.
             </p>
           </div>
           <div className="divide-y divide-gray-100">
