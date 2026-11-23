@@ -141,6 +141,16 @@ export default function SokkerTilArrangorer() {
             </div>
 
             <div className="relative w-full max-w-sm mx-auto lg:mx-0">
+              <div className="hidden lg:block absolute -right-10 -bottom-10 w-44 h-44 rotate-[9deg] rounded-2xl overflow-hidden shadow-2xl shadow-black/40 ring-1 ring-white/10">
+                <Image
+                  src="/sokker-til-arrangorer/mockup-eksempel-2.webp"
+                  alt="Eksempel på løpesokk i sort med tilpasset løpslogo"
+                  fill
+                  sizes="180px"
+                  className="object-cover"
+                  style={{ objectPosition: '50% 70%' }}
+                />
+              </div>
               <div className="absolute -inset-3 translate-x-3 translate-y-3 rotate-[-4deg] rounded-[2rem] border-2 border-amber-400/60" />
               <div
                 className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 p-8 rotate-[1.5deg]"

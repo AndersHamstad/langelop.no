@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Sokker-til-arrangører: la til andre mockup som fargevariant i hero",
+    items: [
+      "La til den sorte sokke-varianten (samme logo) som et mindre, forskjøvet kort bak hovedbildet, for å vise fargevalg uten ny seksjon",
+      "Kun synlig fra lg-breakpoint og oppover — på mindre skjermer vises bare hovedbildet, ingen clipping-problemer",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Sokker-til-arrangører: byttet inn ekte logo-mockup i hero",
     items: [
       "Erstattet den blanke Langeløp-sokken med et eksempel-mockup (sokk med arrangør-logo trykket på) i hero-seksjonen",
