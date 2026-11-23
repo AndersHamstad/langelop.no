@@ -3,6 +3,15 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-11-23",
+    title: "Sokker-til-arrangører: fjerna duplisert ikon-grid og omskrev teksten",
+    items: [
+      "Slo sammen 'Slik fungerer det' og 'Hvorfor sokker' — to like ikon-grid på rad var det tydeligste 'AI-generert'-signalet",
+      "'Hvorfor sokker' er nå en asymmetrisk tekst-seksjon uten boksede kort, for å bryte det repeterende mønsteret",
+      "Omskrev gjennomgående tekst (hero, prosess-steg, skjema-pitch) fra generiske fraser ('ingen forpliktelser', 'skalerer med antall') til mer konkret, direkte språk",
+    ],
+  },
+  {
     date: "2026-11-20",
     title: "Visuell overhaling av sokker-til-arrangører-siden",
     items: [

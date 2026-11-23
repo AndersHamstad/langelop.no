@@ -8,16 +8,16 @@ import {
 } from 'lucide-react';
 
 const STEG = [
-  { icon: PenLine, tittel: 'Fortell oss om løpet', tekst: 'Fyll ut skjemaet med løpsnavn, dato og omtrent hvor mange deltakere dere forventer.' },
-  { icon: Palette, tittel: 'Vi designer et forslag', tekst: 'Vi foreslår et sokkedesign med løpets logo og farger — helt uforpliktende.' },
-  { icon: CheckCircle2, tittel: 'Dere godkjenner', tekst: 'Ingenting produseres før dere har sagt ja til design, antall og pris.' },
-  { icon: PackageCheck, tittel: 'Levering i tide', tekst: 'Vi produserer og leverer sokkene klare til utdeling på løpsdagen.' },
+  { icon: PenLine, tittel: 'Fortell oss om løpet', tekst: 'Navn, dato og omtrent hvor mange som løper. Tar to minutter å fylle ut.' },
+  { icon: Palette, tittel: 'Vi setter opp et forslag', tekst: 'Vi legger logoen deres på sokken og sender et bilde — før noe som helst er bestemt.' },
+  { icon: CheckCircle2, tittel: 'Dere sier ja, nei eller juster', tekst: 'Liker dere ikke forslaget, prøver vi igjen. Ingenting trykkes før dere har godkjent design, antall og pris.' },
+  { icon: PackageCheck, tittel: 'Levert før løpsdagen', tekst: 'Vi selger egne sokker i nettbutikken, så vi vet hvor lang tid produksjon og frakt faktisk tar.' },
 ];
 
-const FORDELER = [
-  { icon: Repeat2, tittel: 'Brukes igjen og igjen', tekst: 'I motsetning til en t-skjorte i skuffen, er sokker noe deltakerne faktisk tar i bruk — gang på gang.' },
-  { icon: Mountain, tittel: 'Løpets merkevare på beina', tekst: 'Hver treningsøkt deltakerne bruker sokkene, blir løpets navn og logo synlig igjen.' },
-  { icon: Ruler, tittel: 'Tilpasset deres løp', tekst: 'Antall og pris skaleres etter deltakerantall — fra mindre lokale løp til store arrangementer.' },
+const HVORFOR = [
+  { icon: Repeat2, tittel: 'Brukt uke etter uke', tekst: 'Capsen og buffen havner i skuffen. Løpesokker er noe folk faktisk har på seg neste gang de trener.' },
+  { icon: Mountain, tittel: 'Logoen følger med på hver løpetur', tekst: 'Ikke bare synlig på startlinjen — løpets navn er fysisk med deltakeren hver gang de trener.' },
+  { icon: Ruler, tittel: 'Vi justerer etter budsjettet deres', tekst: 'Fra 50 par til et par tusen. Vi finner en løsning som passer løpet deres, ikke en fast pakke.' },
 ];
 
 const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition";
@@ -93,16 +93,16 @@ export default function SokkerTilArrangorer() {
                 For løpsarrangører
               </p>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-[1.1] mb-5">
-                Gi deltakerne dine<br />noe de <span className="text-blue-400">faktisk bruker</span>
+                T-skjorten ender i skuffen.<br /><span className="text-blue-400">Sokkene blir brukt.</span>
               </h1>
               <p className="text-gray-400 text-base md:text-lg max-w-lg leading-relaxed mb-8">
-                Tilpassede løpesokker med deres eget løp-logo — et goodiebag-produkt
-                som varer lenger enn en t-skjorte, og som minner deltakerne om løpet
-                deres hver eneste treningsøkt.
+                Vi lager allerede løpesokker som selges i vår egen nettbutikk til norske
+                ultraløpere. Nå kan dere få samme sokk med løpets eget logo på — til
+                utdeling i løpsbagen, i målområdet, eller som en takk til de frivillige.
               </p>
               <a href="#skjema"
                 className="inline-flex items-center gap-2 bg-white text-gray-900 font-semibold px-6 py-3.5 rounded-xl text-sm hover:bg-gray-100 transition shadow-lg shadow-black/20">
-                Få et uforpliktende tilbud
+                Spør om pris og design
                 <ArrowRight size={16} />
               </a>
             </div>
@@ -126,9 +126,9 @@ export default function SokkerTilArrangorer() {
       {/* Troverdighet */}
       <div className="bg-white py-5 px-4 border-b border-gray-100">
         <p className="text-center text-sm text-gray-500 max-w-2xl mx-auto">
-          Langeløp designer og selger allerede egne løpesokker til norske ultraløpere via{' '}
-          <a href="/shop" className="text-blue-600 font-medium hover:underline">vår egen nettbutikk</a>
-          {' '}— vi kjenner både produktet og løpermiljøet.
+          Dette er ikke et sideprosjekt — sjekk{' '}
+          <a href="/shop" className="text-blue-600 font-medium hover:underline">nettbutikken vår</a>
+          {' '}om du vil se sokken vi faktisk produserer og selger.
         </p>
       </div>
 
@@ -136,7 +136,6 @@ export default function SokkerTilArrangorer() {
       <div className="bg-gray-50 py-16 md:py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-2">Prosessen</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">Slik fungerer det</h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -159,23 +158,31 @@ export default function SokkerTilArrangorer() {
         </div>
       </div>
 
-      {/* Fordeler */}
+      {/* Hvorfor sokker */}
       <div className="bg-white py-16 md:py-20 px-4 border-y border-gray-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-2">Fordeler</p>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">Hvorfor sokker</h2>
+        <div className="max-w-5xl mx-auto grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-4">
+              Hvorfor sokker, og ikke<br />nok en caps eller buff?
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Det er fort gjort å drukne i goodiebag-produkter ingen egentlig bruker.
+              Sokker er annerledes — ikke fordi de er et smartere produkt, men fordi
+              de faktisk blir slitt ut.
+            </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {FORDELER.map((f) => {
+          <div className="divide-y divide-gray-100">
+            {HVORFOR.map((f) => {
               const Icon = f.icon;
               return (
-                <div key={f.tittel} className="text-center sm:text-left">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mb-4">
-                    <Icon size={22} strokeWidth={2} />
+                <div key={f.tittel} className="flex gap-4 py-5 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                    <Icon size={18} strokeWidth={2} />
                   </div>
-                  <h3 className="text-base font-bold text-gray-900 mb-2">{f.tittel}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{f.tekst}</p>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-1">{f.tittel}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{f.tekst}</p>
+                  </div>
                 </div>
               );
             })}
@@ -190,16 +197,16 @@ export default function SokkerTilArrangorer() {
 
             {/* Venstre: pitch */}
             <div className="bg-[#0b1626] text-white p-8 md:p-10 flex flex-col justify-center">
-              <h2 className="text-2xl font-extrabold mb-3">Få et uforpliktende tilbud</h2>
+              <h2 className="text-2xl font-extrabold mb-3">Fortell oss om løpet</h2>
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                Pris avhenger av antall og design — vi sender et konkret forslag,
-                helt uten forpliktelser. Jo før dere tar kontakt, jo bedre tid har
-                vi til å designe og produsere før løpsdagen.
+                Pris avhenger av antall og design, så vi sender et konkret forslag
+                basert på det dere skriver her. Ta kontakt tidlig — det gir oss
+                bedre tid til design og produksjon før løpsdagen.
               </p>
               <ul className="space-y-3 text-sm text-gray-300">
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Ingen forpliktelser</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Skalerer med deltakerantall</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Svar innen kort tid</li>
+                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Du ser forslaget før noe er bestemt</li>
+                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Pris og antall tilpasses løpet deres</li>
+                <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-blue-400 shrink-0" /> Det er oss du svarer med, ikke et skjema</li>
               </ul>
             </div>
 
