@@ -4,6 +4,14 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "Sokker-til-arrangører: byttet inn ekte logo-mockup i hero",
+    items: [
+      "Erstattet den blanke Langeløp-sokken med et eksempel-mockup (sokk med arrangør-logo trykket på) i hero-seksjonen",
+      "Bildet ligger i public/sokker-til-arrangorer/ — flere eksempler kan legges til samme mappe etter hvert",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Sokker-til-arrangører: visuelt løft (farge, tekstur, form)",
     items: [
       "Bytta standard Tailwind-blå til en varm rav/amber-aksent gjennom hele siden",

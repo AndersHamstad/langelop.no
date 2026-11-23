@@ -151,8 +151,8 @@ export default function SokkerTilArrangorer() {
                   style={{ clipPath: 'polygon(11% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 13%)' }}
                 >
                   <Image
-                    src="/shop/Sock-5.png"
-                    alt="Langeløp Endurance Crew løpesokk"
+                    src="/sokker-til-arrangorer/mockup-eksempel-1.webp"
+                    alt="Eksempel på løpesokk med tilpasset løpslogo"
                     fill
                     priority
                     sizes="(max-width: 1024px) 60vw, 400px"
