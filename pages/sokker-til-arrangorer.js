@@ -126,7 +126,7 @@ export default function SokkerTilArrangorer() {
                 For løpsarrangører
               </p>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-[1.1] mb-5">
-                Tilpassede løpesokker<br />til <span className="text-amber-400">løpet deres</span>
+                Tilpassede løpesokker<br />til <span className="text-amber-400">ditt løp</span>
               </h1>
               <p className="text-gray-400 text-base md:text-lg max-w-lg leading-relaxed mb-8">
                 Vi designer, bestiller og leverer løpesokker med løpets eget logo.
