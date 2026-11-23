@@ -4,6 +4,16 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "For-arrangører-siden: ryddet opp i for mange lag / lite luft",
+    items: [
+      "Fjerna ikon-chip-boksen inni kortene (ikon lå i en fargeboks, inni en kortboks, inni en seksjonsboks) — ikonet står nå fritt i amber-farge",
+      "Fjerna border på kort/paneler til fordel for kun skygge — ett visuelt lag i stedet for border+shadow+bakgrunn stablet oppå hverandre",
+      "Byttet hero fra gray-900 til samme navy (#0b1626) som resten av arrangør-sidene, og aktionables-seksjonen fra gray-50 til hvit — færre distinkte fargebånd stablet tett",
+      "Doblet vertikal padding i hero og kort-seksjonen, mer mellomrom mellom kort-grid og ekspandert skjema",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "For-arrangører-siden: fra lang innholdsside til 4 actionable kort",
     items: [
       "Fjerna den statiske 4-boks fordel-seksjonen (ren tekst, ingen handling)",

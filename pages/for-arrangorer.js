@@ -26,12 +26,10 @@ const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm b
 function ActionCard({ icon: Icon, title, text, onClick, isOpen, href }) {
   const inner = (
     <>
-      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-50 text-amber-700 mb-4">
-        <Icon size={22} strokeWidth={2} />
-      </div>
-      <h3 className="text-base font-bold text-gray-900 mb-1">{title}</h3>
+      <Icon size={24} strokeWidth={1.75} className="text-amber-600 mb-5" />
+      <h3 className="text-base font-bold text-gray-900 mb-1.5">{title}</h3>
       <p className="text-sm text-gray-500 leading-relaxed">{text}</p>
-      <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 mt-4">
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 mt-5">
         {href ? 'Se tilbudet' : isOpen ? 'Lukk' : 'Åpne skjema'}
         <ArrowRight size={14} className={`transition-transform ${isOpen ? 'rotate-90' : ''}`} />
       </span>
@@ -42,7 +40,7 @@ function ActionCard({ icon: Icon, title, text, onClick, isOpen, href }) {
     return (
       <Link
         href={href}
-        className="text-left bg-white rounded-2xl border border-gray-200 p-6 hover:border-amber-300 hover:shadow-md transition block"
+        className="text-left bg-white rounded-2xl shadow-sm p-7 md:p-8 hover:shadow-md transition block"
       >
         {inner}
       </Link>
@@ -52,8 +50,8 @@ function ActionCard({ icon: Icon, title, text, onClick, isOpen, href }) {
   return (
     <button
       onClick={onClick}
-      className={`text-left bg-white rounded-2xl border p-6 hover:shadow-md transition ${
-        isOpen ? 'border-amber-300 ring-2 ring-amber-100' : 'border-gray-200 hover:border-amber-300'
+      className={`text-left bg-white rounded-2xl shadow-sm p-7 md:p-8 transition ${
+        isOpen ? 'ring-2 ring-amber-300 shadow-md' : 'hover:shadow-md'
       }`}
     >
       {inner}
@@ -139,24 +137,24 @@ export default function ForArrangorerPage() {
       </Head>
 
       {/* Hero */}
-      <div className="bg-gray-900 text-white py-14 px-4">
+      <div className="bg-[#0b1626] text-white py-20 md:py-24 px-4">
         <div className="max-w-3xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-4">
             For arrangører
           </p>
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-4 leading-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold mb-5 leading-tight">
             Nå løperne som leter etter akkurat ditt løp
           </h1>
-          <p className="text-gray-300 text-base md:text-lg max-w-xl leading-relaxed">
+          <p className="text-gray-400 text-base md:text-lg max-w-xl leading-relaxed">
             Det er gratis å liste løpet ditt. Velg hva du trenger hjelp med under.
           </p>
         </div>
       </div>
 
       {/* Actionables */}
-      <div className="bg-gray-50 py-12 px-4">
+      <div className="bg-white py-20 md:py-28 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <ActionCard
               icon={FilePlus2}
               title="Meld inn nytt løp"
@@ -187,10 +185,10 @@ export default function ForArrangorerPage() {
           </div>
 
           {open && (
-            <div ref={panelRef} className="mt-8 max-w-2xl mx-auto scroll-mt-6">
+            <div ref={panelRef} className="mt-12 max-w-2xl mx-auto scroll-mt-6">
 
               {open === 'new' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8">
+                <div className="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-7 md:p-9">
                   <h2 className="text-xl font-bold text-gray-900 mb-1">Meld inn et løp</h2>
                   <p className="text-sm text-gray-500 mb-6">Finner du ikke løpet ditt på siden? Meld det inn her, så legger vi det til.</p>
                   {nyStatus === 'success' ? (
@@ -270,7 +268,7 @@ export default function ForArrangorerPage() {
               )}
 
               {open === 'update' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8">
+                <div className="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-7 md:p-9">
                   <h2 className="text-xl font-bold text-gray-900 mb-1">Meld endringer</h2>
                   <p className="text-sm text-gray-500 mb-6">Er det noe feil eller utdatert på et eksisterende løp? Gi oss beskjed.</p>
                   {oppdStatus === 'success' ? (
@@ -312,12 +310,10 @@ export default function ForArrangorerPage() {
               )}
 
               {open === 'highlight' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 md:p-8 text-center">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-100 text-amber-700 mx-auto mb-4">
-                    <Star size={22} strokeWidth={2} />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Vil du fremheve løpet ditt?</h2>
-                  <p className="text-sm text-gray-600 mb-5 leading-relaxed max-w-md mx-auto">
+                <div className="bg-amber-50 rounded-2xl p-7 md:p-9 text-center">
+                  <Star size={28} strokeWidth={1.75} className="text-amber-600 mx-auto mb-5" />
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">Vil du fremheve løpet ditt?</h2>
+                  <p className="text-sm text-gray-600 mb-6 leading-relaxed max-w-md mx-auto">
                     Fremhevede løp vises øverst på forsiden med stort bilde og direkte lenke til påmelding — synlig for alle som besøker langelop.no.
                   </p>
                   <a href="mailto:post@langelop.no?subject=Fremhevet løp"
