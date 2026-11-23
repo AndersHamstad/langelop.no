@@ -4,6 +4,17 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-23",
+    title: "For-arrangører-siden: fra lang innholdsside til 4 actionable kort",
+    items: [
+      "Fjerna den statiske 4-boks fordel-seksjonen (ren tekst, ingen handling)",
+      "De to lange skjemaene og fremhev-boksen ligger nå skjult bak klikkbare kort (Meld inn nytt løp / Meld endringer / Fremhev ditt løp) — kun ett skjema vist av gangen, scroller automatisk ned ved åpning",
+      "Sokker-kortet lenker direkte til den dedikerte /sokker-til-arrangorer-siden i stedet for å duplisere innhold",
+      "Fjerna en ubrukt supabase-import som krasjet siden i lokalt dev-miljø uten .env.local (samme feil fantes i den gamle filen, men ble aldri trigget siden importen ikke ble brukt)",
+      "Fikset footer-lenken '/for-arrangorer#oppdater', som aldri har pekt på noe reelt — åpner nå 'Meld endringer'-kortet automatisk",
+    ],
+  },
+  {
+    date: "2026-11-23",
     title: "Ny Innboks-fane: alt som venter, uavhengig av e-post",
     items: [
       "race_submissions, race_updates og sock_inquiries hadde ingen admin-UI i det hele tatt — kun synlige i den daglige e-postrapporten i 24t, deretter usynlige uten å gå inn i Supabase direkte",
