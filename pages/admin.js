@@ -3,6 +3,16 @@ import Head from "next/head";
 
 const DEV_LOG = [
   {
+    date: "2026-11-26",
+    title: "Fiks: godkjente kommentarer dukket ikke opp på løpssiden",
+    items: [
+      "Løpssidene er statiske (ISR, revalidate: 3600s) — Innboks-godkjenning oppdaterte databasen, men trigget aldri res.revalidate() slik update-race.js og digest-suggestions.js allerede gjorde for andre endringer",
+      "inbox-action.js revaliderer nå riktig løpsside automatisk når en kommentar godkjennes — synlig i løpet av sekunder, ikke opptil en time (og i praksis lenger, siden ISR kun bygger på nytt ved neste besøk etter fristen)",
+      "La til en 'Revalider alle løpssider'-knapp i Dev-fanen for å fange opp kommentarer som allerede ble godkjent før denne fiksen, og for å bruke etter fremtidige bulk-endringer (f.eks. SQL-migreringer rett i Supabase)",
+      "Kunne ikke live-teste res.revalidate() lokalt (samme årsak som tidligere: ingen .env.local i denne sandboksen) — bør bekreftes i produksjon",
+    ],
+  },
+  {
     date: "2026-11-23",
     title: "For-arrangører: Fremhev ditt løp-kortet er nå fylt gult og ligger øverst",
     items: [
@@ -387,6 +397,28 @@ function DevTab({ adminPw }) {
   const [editForm, setEditForm] = useState({});
   const [reportSending, setReportSending] = useState(false);
   const [reportResult, setReportResult] = useState(null);
+  const [revalidating, setRevalidating] = useState(false);
+  const [revalidateResult, setRevalidateResult] = useState(null);
+
+  async function revalidateAllRaces() {
+    setRevalidating(true);
+    setRevalidateResult(null);
+    try {
+      const res = await fetch("/api/admin/revalidate-all", {
+        method: "POST",
+        headers: { "x-admin-password": adminPw },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRevalidateResult({ ok: false, message: data.error || "Ukjent feil" });
+      } else {
+        setRevalidateResult({ ok: true, message: `Oppdatert! ${data.revalidated} løpssider bygget på nytt.` });
+      }
+    } catch (err) {
+      setRevalidateResult({ ok: false, message: err.message });
+    }
+    setRevalidating(false);
+  }
 
   async function sendTestReport() {
     setReportSending(true);
@@ -561,6 +593,29 @@ function DevTab({ adminPw }) {
         {reportResult && (
           <p className={`text-sm mt-2 ${reportResult.ok ? "text-green-600" : "text-red-600"}`}>
             {reportResult.ok ? "✓ " : "✗ "}{reportResult.message}
+          </p>
+        )}
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center justify-between gap-4 flex-wrap mt-3">
+          <div>
+            <p className="font-semibold text-sm text-gray-900">Bygg alle løpssider på nytt</p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Løpssidene er statiske og oppdateres normalt først en time etter neste besøk. Bruk denne
+              etter å ha godkjent kommentarer/anmeldelser i bulk, eller etter en større datamigrering,
+              for å få endringene synlige med en gang.
+            </p>
+          </div>
+          <button
+            onClick={revalidateAllRaces}
+            disabled={revalidating}
+            className="shrink-0 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {revalidating ? "Bygger…" : "Revalider alle løpssider"}
+          </button>
+        </div>
+        {revalidateResult && (
+          <p className={`text-sm mt-2 ${revalidateResult.ok ? "text-green-600" : "text-red-600"}`}>
+            {revalidateResult.ok ? "✓ " : "✗ "}{revalidateResult.message}
           </p>
         )}
       </div>

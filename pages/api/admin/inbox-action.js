@@ -29,8 +29,21 @@ export default async function handler(req, res) {
   }
 
   if (action === "approve") {
-    const { error } = await supabase.from(table).update({ approved: true }).eq("id", id);
+    const { data, error } = await supabase.from(table).update({ approved: true }).eq("id", id).select();
     if (error) return res.status(500).json({ error: error.message });
+
+    // Løpssiden er statisk (ISR, revalidate: 3600s) — uten dette blir en godkjent
+    // kommentar ikke synlig før noen besøker siden igjen EN TIME eller mer etter godkjenning.
+    if (table === "comments" && data?.[0]?.race_id) {
+      const { data: race } = await supabase.from("races").select("slug").eq("id", data[0].race_id).single();
+      if (race?.slug) {
+        try {
+          await res.revalidate(`/${race.slug}`);
+        } catch (revalidateError) {
+          console.error("Revalidate feilet:", revalidateError);
+        }
+      }
+    }
   } else {
     // dismiss (løp-forslag/endringer/sokkehenvendelser) og reject (anmeldelser/kommentarer)
     // betyr begge "fjern fra køen" — radene har ingen status-kolonne å flagge i stedet.
