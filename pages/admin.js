@@ -4,6 +4,18 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-26",
+    title: "Ny cron: automatisk sammenligning mot Kondis.no sin 2027-ultraløpoversikt",
+    items: [
+      "Kjører 1. og 15. hver måned (nærmeste kalenderbaserte tilnærming til 'hver 14. dag' — ekte 14-dagers-intervall finnes ikke i standard cron-syntaks)",
+      "Henter den publiserte Google Sheet-tabellen artikkelen lenker til direkte (samme kilde jeg brukte manuelt tidligere), kjører samme navn/substring/domene-matching mot races, og legger kun NYE funn i Oppdateringer-køen",
+      "Dedup mot alt som er foreslått før (uansett status) — en avvist datokorrigering eller et avvist nytt-løp-forslag kommer ikke tilbake med mindre de underliggende dataene faktisk endrer seg",
+      "Sender e-postvarsel (samme mal som daglig rapport) kun når noe nytt faktisk ble funnet",
+      "La til samme type ventende-badge på Oppdateringer-fanen som Innboks allerede har",
+      "Validerte selve matching-logikken (portert fra Python til JS) mot live Kondis-data i sandboks — ga identiske tall (39/74/54) som den opprinnelige manuelle kjøringen. Kunne ikke kjøre hele cron-endepunktet end-to-end her (mangler Supabase-nøkler lokalt) — bør bekreftes i produksjon ved første kjøring 1. eller 15.",
+    ],
+  },
+  {
+    date: "2026-11-26",
     title: "Fiks: 'Revalider alle løpssider' krasjet (timeout, ikke JSON-svar)",
     items: [
       "Knappen gjorde 123 sekvensielle res.revalidate()-kall (ekte side-regenerering hver gang) i ETT serverless-kall — traff Vercels tidsgrense, som svarer med en HTML-feilside i stedet for JSON ('Unexpected token A, \"An error o\"...' i UI-et)",
@@ -2981,6 +2993,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [inbox, setInbox] = useState(null);
+  const [digestPendingCount, setDigestPendingCount] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem("adminPw");
@@ -3012,6 +3025,15 @@ export default function AdminPage() {
     ? inbox.raceSubmissions.length + inbox.raceUpdates.length + inbox.sockInquiries.length +
       inbox.comments.length + inbox.produktReviews.length + inbox.utstyrReviews.length
     : 0;
+
+  useEffect(() => {
+    if (!adminPw) return;
+    // Samme begrunnelse som Innboks-badgen over — synlig med en gang man logger inn.
+    fetch("/api/admin/digest-suggestions", { headers: { "x-admin-password": adminPw } })
+      .then((r) => r.json())
+      .then((data) => setDigestPendingCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {});
+  }, [adminPw]);
 
   function handleAuth(pw) {
     setAdminPw(pw);
@@ -3095,7 +3117,7 @@ export default function AdminPage() {
                 { value: "newsletters", label: "Brev" },
                 { value: "shop", label: "Shop" },
                 { value: "concepts", label: "Konsepter" },
-                { value: "digest", label: "Oppdateringer" },
+                { value: "digest", label: "Oppdateringer", badge: digestPendingCount },
                 { value: "descriptions", label: "Beskrivelser" },
                 { value: "dev", label: "Dev" },
               ].map((t) => (

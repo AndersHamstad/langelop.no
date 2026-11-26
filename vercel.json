@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/daily-report",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/kondis-sync",
+      "schedule": "0 8 1,15 * *"
     }
   ]
 }
