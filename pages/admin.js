@@ -4,6 +4,15 @@ import Head from "next/head";
 const DEV_LOG = [
   {
     date: "2026-11-26",
+    title: "Fiks: 'Revalider alle løpssider' krasjet (timeout, ikke JSON-svar)",
+    items: [
+      "Knappen gjorde 123 sekvensielle res.revalidate()-kall (ekte side-regenerering hver gang) i ETT serverless-kall — traff Vercels tidsgrense, som svarer med en HTML-feilside i stedet for JSON ('Unexpected token A, \"An error o\"...' i UI-et)",
+      "revalidate-all.js tar nå imot en 'slugs'-batch i stedet for alltid å gjøre alle løpene selv",
+      "Admin-UI-et henter løpslisten, deler den i batcher à 15, og kaller endepunktet gjentatte ganger med fremdriftsvisning ('Bygger… 45/123') — samme mønster som Beskrivelser-fanens bulk-generering",
+    ],
+  },
+  {
+    date: "2026-11-26",
     title: "Fiks: godkjente kommentarer dukket ikke opp på løpssiden",
     items: [
       "Løpssidene er statiske (ISR, revalidate: 3600s) — Innboks-godkjenning oppdaterte databasen, men trigget aldri res.revalidate() slik update-race.js og digest-suggestions.js allerede gjorde for andre endringer",
@@ -399,21 +408,45 @@ function DevTab({ adminPw }) {
   const [reportResult, setReportResult] = useState(null);
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateResult, setRevalidateResult] = useState(null);
+  const [revalidateProgress, setRevalidateProgress] = useState(null);
 
   async function revalidateAllRaces() {
     setRevalidating(true);
     setRevalidateResult(null);
+    setRevalidateProgress(null);
     try {
-      const res = await fetch("/api/admin/revalidate-all", {
-        method: "POST",
-        headers: { "x-admin-password": adminPw },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setRevalidateResult({ ok: false, message: data.error || "Ukjent feil" });
-      } else {
-        setRevalidateResult({ ok: true, message: `Oppdatert! ${data.revalidated} løpssider bygget på nytt.` });
+      const racesRes = await fetch("/api/admin/races", { headers: { "x-admin-password": adminPw } });
+      const allRaces = await racesRes.json();
+      const slugs = (Array.isArray(allRaces) ? allRaces : []).map((r) => r.slug).filter(Boolean);
+
+      const BATCH = 15;
+      let revalidated = 0;
+      let failed = 0;
+      setRevalidateProgress({ done: 0, total: slugs.length });
+
+      for (let i = 0; i < slugs.length; i += BATCH) {
+        const batch = slugs.slice(i, i + BATCH);
+        const res = await fetch("/api/admin/revalidate-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
+          body: JSON.stringify({ slugs: batch, revalidateHome: i + BATCH >= slugs.length }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          revalidated += data.revalidated || 0;
+          failed += data.failed || 0;
+        } else {
+          failed += batch.length;
+        }
+        setRevalidateProgress({ done: Math.min(i + BATCH, slugs.length), total: slugs.length });
       }
+
+      setRevalidateResult({
+        ok: failed === 0,
+        message: failed === 0
+          ? `Oppdatert! ${revalidated} løpssider bygget på nytt.`
+          : `${revalidated} løpssider oppdatert, ${failed} feilet.`,
+      });
     } catch (err) {
       setRevalidateResult({ ok: false, message: err.message });
     }
@@ -610,7 +643,9 @@ function DevTab({ adminPw }) {
             disabled={revalidating}
             className="shrink-0 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition disabled:opacity-50"
           >
-            {revalidating ? "Bygger…" : "Revalider alle løpssider"}
+            {revalidating
+              ? `Bygger… ${revalidateProgress ? `${revalidateProgress.done}/${revalidateProgress.total}` : ""}`
+              : "Revalider alle løpssider"}
           </button>
         </div>
         {revalidateResult && (
